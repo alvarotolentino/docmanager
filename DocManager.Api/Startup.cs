@@ -26,6 +26,11 @@ using MediatR;
 using Application;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Context;
+using Infrastructure.Shared;
+using Application.Interfaces.Services;
+using DocManager.Api.Services;
+using DocManager.Api.Infrastructure.Formatter;
+using Infrastructure.Identity;
 
 namespace DocManager.Api
 {
@@ -41,42 +46,43 @@ namespace DocManager.Api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
-            services.AddPersistenceLayer(Configuration);
+            services.AddApplicationLayer();
+            services.AddShareInfraestructureLayer(Configuration);
+            services.AddIdentityInfrastructureLayer(Configuration);
+            services.AddPersistenceInfrastructureLayer(Configuration);
             services
+            .AddCustomMVC(Configuration)
             .AddCustomVersioning(Configuration)
             .AddSwagger(Configuration)
             .AddCustomHealthCheck(Configuration);
-            services.AddApplicationLayer();
+            services.AddControllers();
             services.AddTransient<ExceptionHandlingMiddleware>();
-
+            services.AddScoped<IAuthenticatedUserService, AuthenticatedUserService>();
 
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app,
-        IWebHostEnvironment env, ApplicationDbContext db)
+        IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            db.Database.EnsureCreated();
-
             app.UseMiddleware<ExceptionHandlingMiddleware>();
+            app.UseMiddleware<JwtMiddleware>();
             app.UseHttpsRedirection();
-
             app.UseSwagger();
             app.UseSwaggerUI(o =>
             {
                 o.SwaggerEndpoint("/swagger/v1/swagger.json", "Document Manager API v1");
             });
 
+            app.UseCors("CorsPolicy");
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapDefaultControllerRoute();
@@ -108,6 +114,27 @@ namespace DocManager.Api
     public static class CustomExtensionMethods
     {
 
+        public static IServiceCollection AddCustomMVC(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddControllers();
+            // .AddMvcOptions(options =>
+            // {
+            //     // options.OutputFormatters.Clear();
+            //     options.OutputFormatters.Add(new Utf8JsonOutputFormatter(Utf8Json.Resolvers.StandardResolver.Default));
+            //     // options.InputFormatters.Clear();
+            //     options.InputFormatters.Add(new Utf8JsonInputFormatter());
+            // });
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy",
+                builder => builder.SetIsOriginAllowed((host) => true)
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials());
+            });
+            return services;
+        }
         public static IServiceCollection AddSwagger(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddSwaggerGen(o =>
@@ -121,6 +148,31 @@ namespace DocManager.Api
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 o.IncludeXmlComments(xmlPath);
+                o.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    Description = "Input your Bearer token in this format - Bearer {your token here} to access this API",
+                });
+                o.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer",
+                            },
+                            Scheme = "Bearer",
+                            Name = "Bearer",
+                            In = ParameterLocation.Header,
+                        }, new List<string>()
+                    },
+                });
             });
 
             return services;

@@ -9,8 +9,7 @@ namespace DocManager.Api.Middleware
 {
     public class ExceptionHandlingMiddleware : IMiddleware
     {
-        private const string SERVERERROR = "Server Error"; 
-        private const string CONTENTTYPE = "application/json"; 
+        private const string SERVERERROR = "Server Error";
         public async Task InvokeAsync(HttpContext context, RequestDelegate next)
         {
             try
@@ -35,7 +34,7 @@ namespace DocManager.Api.Middleware
                 errors = GetErrors(exception)
             };
 
-            context.Response.ContentType = CONTENTTYPE;
+            context.Response.ContentType = "application/json";
             context.Response.StatusCode = code;
             await context.Response.WriteAsync(JsonSerializer.ToJsonString(response));
 
@@ -47,7 +46,7 @@ namespace DocManager.Api.Middleware
             {
                 ValidationException ve => ve.Title,
                 NotFoundException nfe => nfe.Title,
-                _ => "Server Error"
+                _ => SERVERERROR
             };
         }
 

@@ -5,7 +5,7 @@ namespace Application.Exceptions
     [Serializable]
     public class NotFoundException : ApiException
     {
-        public NotFoundException(string title, string message)
+        public NotFoundException(string message)
         : base((string)Resources.Reader.GetMessages()["ExceptionMessage"]["NotFound"], message)
         {
 

@@ -1,15 +1,21 @@
+using System.Net.Mime;
+using DocManager.Api.Conventions;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DocManager.Api.Controllers
 {
+    [Authorize]
+    [ApiConventionType(typeof(CustomApiConventions))]
+
     [ApiController]
     [Route("api/v{version:apiVersion}/[controller]")]
 
     public abstract class BaseApiController : ControllerBase
     {
-        private IMediator _mediator;
-        protected IMediator Mediator => _mediator ??= HttpContext.RequestServices.GetService<IMediator>();
+        private IMediator mediator;
+        protected IMediator Mediator => this.mediator ??= HttpContext.RequestServices.GetService<IMediator>();
     }
 }

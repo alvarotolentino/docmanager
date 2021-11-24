@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Application.DTOs.Email;
 using Application.Exceptions;
-using Application.Interfaces;
+using Application.Interfaces.Services;
 using Domain.Settings;
 using MailKit.Net.Smtp;
 using MailKit.Security;
@@ -14,13 +14,13 @@ namespace Infrastructure.Shared.Services
 {
     public class EmailService : IEmailService
     {
-        public MailSettings _mailSettings { get; }
-        public ILogger<EmailService> _logger { get; }
+        public MailServiceSettings mailSettings { get; }
+        public ILogger<EmailService> logger { get; }
 
-        public EmailService(IOptions<MailSettings> mailSettings, ILogger<EmailService> logger)
+        public EmailService(IOptions<MailServiceSettings> mailSettings, ILogger<EmailService> logger)
         {
-            _mailSettings = mailSettings.Value;
-            _logger = logger;
+            this.mailSettings = mailSettings.Value;
+            this.logger = logger;
         }
 
         public async Task SendAsync(EmailRequest request)
@@ -28,7 +28,7 @@ namespace Infrastructure.Shared.Services
             try
             {
                 var email = new MimeMessage();
-                email.Sender = new MailboxAddress(_mailSettings.MailBoxName, request.From ?? _mailSettings.EmailFrom);
+                email.Sender = new MailboxAddress(this.mailSettings.DisplayName, request.From ?? this.mailSettings.EmailFrom);
                 email.To.Add(MailboxAddress.Parse(request.To));
                 email.Subject = request.Subject;
                 var bodyBuilder = new BodyBuilder();
@@ -37,15 +37,15 @@ namespace Infrastructure.Shared.Services
 
                 using (var smtpClient = new SmtpClient())
                 {
-                    smtpClient.Connect(_mailSettings.SmtpHost, _mailSettings.SmtpPort, SecureSocketOptions.StartTls);
-                    smtpClient.Authenticate(_mailSettings.SmtpUser, _mailSettings.SmtpPass);
+                    smtpClient.Connect(this.mailSettings.SmtpHost, this.mailSettings.SmtpPort, SecureSocketOptions.StartTls);
+                    smtpClient.Authenticate(this.mailSettings.SmtpUser, this.mailSettings.SmtpPass);
                     await smtpClient.SendAsync(email);
                     smtpClient.Disconnect(true);
                 }
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception.Message, exception);
+                this.logger.LogError(exception.Message, exception);
                 throw new ApiException("EmailService Error", exception.Message);
             }
         }

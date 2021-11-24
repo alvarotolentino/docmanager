@@ -9,11 +9,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Application\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{1B0024B7-7052-455A-A9F5-E80F049822FA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Identity", "Infrastructure.Identity\Infrastructure.Identity.csproj", "{6730005C-6977-47D3-8374-3B296FB4A032}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Persistence", "Infrastructure.Persistence\Infrastructure.Persistence.csproj", "{4A406EF7-8662-49EE-9E8E-E6AFB72D0F12}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Shared", "Infrastructure.Shared\Infrastructure.Shared.csproj", "{B6FE0AA8-B052-4114-BBD1-738FC4E40ECC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Identity", "Infrastructure.Identity\Infrastructure.Identity.csproj", "{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -112,5 +112,17 @@ Global
 		{B6FE0AA8-B052-4114-BBD1-738FC4E40ECC}.Release|x64.Build.0 = Release|Any CPU
 		{B6FE0AA8-B052-4114-BBD1-738FC4E40ECC}.Release|x86.ActiveCfg = Release|Any CPU
 		{B6FE0AA8-B052-4114-BBD1-738FC4E40ECC}.Release|x86.Build.0 = Release|Any CPU
+		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Debug|x64.Build.0 = Debug|Any CPU
+		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Debug|x86.Build.0 = Debug|Any CPU
+		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Release|x64.ActiveCfg = Release|Any CPU
+		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Release|x64.Build.0 = Release|Any CPU
+		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Release|x86.ActiveCfg = Release|Any CPU
+		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

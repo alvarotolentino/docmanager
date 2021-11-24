@@ -2,5 +2,17 @@
   "ExceptionMessage": {
     "Validation": "Validation Errors",
     "NotFound": "Record Not Found"
+  },
+  "Validation": {
+    "LoginEmailRequired": "Email required",
+    "LoginEmailInvalid": "Invalid Email",
+    "LoginPasswordRequired": "Password required",
+    "DocumentIdMsg": "Invalid Document ID",
+    "MaxFileSize": 1048576,
+    "MaxFileSizeMsg": "File size exceeds the maximum limit. Maximum upload size is 1Mb",
+    "DescriptionLength": 500,
+    "DescriptionMsg": "Description must no exceed 500 characters.",
+    "CategoryLength": 100,
+    "CategoryMsg": "Category must no exceed 100 characters."
   }
 }

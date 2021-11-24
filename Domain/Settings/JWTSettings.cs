@@ -1,6 +1,6 @@
 namespace Domain.Settings
 {
-    public class JWTSettings
+    public class JWTokenSettings
     {
         public string Key { get; set; }
         public string Issuer { get; set; }

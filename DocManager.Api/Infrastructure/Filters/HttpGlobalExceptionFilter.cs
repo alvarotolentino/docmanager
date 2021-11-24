@@ -1,5 +1,5 @@
 using System.Net;
-using DocManager.Api.Exceptions;
+using DocManager.Api.Infrastructure.Exceptions;
 using DocManager.Api.Infrastructure.ActionResults;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -13,18 +13,18 @@ namespace DocManager.Api.Infrastructure.Filters
     public class HttpGlobalExceptionFilter : IExceptionFilter
     {
 
-        private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment _env;
+        private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment env;
         
-        private readonly ILogger _logger;
+        private readonly ILogger logger;
 
         public HttpGlobalExceptionFilter(IWebHostEnvironment env, ILogger logger)
         {
-            _env = env;
-            _logger = logger;
+           this.env = env;
+           this.logger = logger;
         }
         public void OnException(ExceptionContext context)
         {
-            _logger.LogError(new EventId(context.Exception.HResult), context.Exception, context.Exception.Message);
+           this.logger.LogError(new EventId(context.Exception.HResult), context.Exception, context.Exception.Message);
             if (context.Exception.GetType() == typeof(DomainException))
             {
                 var problemDetails = new ValidationProblemDetails
@@ -46,7 +46,7 @@ namespace DocManager.Api.Infrastructure.Filters
                     Messages = new[] { "An error ocurred." }
                 };
 
-                if (_env.IsDevelopment())
+                if (this.env.IsDevelopment())
                 {
                     json.DeveloperMessage = context.Exception;
                 }

@@ -1,2 +1,80 @@
-GET http://localhost:5000/api/v1/WeatherForecast HTTP/1.1
+# @name token
+POST https://localhost:5001/api/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "Email": "adminuser@gmail.com",
+    "Password": "P@ssw0rd"
+}
 ###
+GET https://localhost:5001/api/v1/WeatherForecast HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token.response.body.$.data.jwToken}}
+
+###
+GET https://localhost:5001/api/v1/Documents/info/3 HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token.response.body.$.data.jwToken}}
+###
+DELETE https://localhost:5001/api/v1/Documents/1 HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token.response.body.$.data.jwToken}}
+###
+POST https://localhost:5001/api/v1/Groups HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token.response.body.$.data.jwToken}}
+
+{
+    "name": "test"
+}
+###
+GET https://localhost:5001/api/v1/Groups/2 HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token.response.body.$.data.jwToken}}
+###
+PUT https://localhost:5001/api/v1/Groups/3 HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token.response.body.$.data.jwToken}}
+
+{
+    "name": "updated"
+}
+###
+curl --location --request POST 'https://localhost:5001/api/v1/Documents/upload' \
+--header 'Authorization: Bearer {{token.response.body.$.data.jwToken}}' \
+--form 'description="My document"' \
+--form 'category="demo"' \
+--form 'file=@"/C:/Users/Alvaro/Downloads/Backend Engineer Interview Project.pdf"'
+###
+GET https://localhost:5001/api/v1/documents/info/4 HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token.response.body.$.data.jwToken}}
+###
+GET https://localhost:5001/api/v1/Documents?pagenumber=1&pagesize=2 HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token.response.body.$.data.jwToken}}
+###
+GET https://localhost:5001/api/v1/Groups?pagenumber=1&pagesize=10 HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token.response.body.$.data.jwToken}}
+###
+POST https://localhost:5001/api/v1/accounts  HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token.response.body.$.data.jwToken}}
+
+{
+  "firstname": "cata",
+  "lastname": "cata",
+  "email": "cata@cata.com",
+  "username": "cata@cata.com",
+  "password": "P@ssw0rd",
+  "confirmpassword": "P@ssw0rd"
+}
+###
+POST https://localhost:5001/api/v1/accounts/4/group/5  HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token.response.body.$.data.jwToken}}
+###
+POST https://localhost:5001/api/v1/accounts/6/role/1  HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token.response.body.$.data.jwToken}}
