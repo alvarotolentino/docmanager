@@ -5,37 +5,37 @@ This is a clean-architecture solution with loosely-coupled, inverted-dependency 
 
 Features:
 
-[x] CQRS with MediatR
+:white_check_mark: CQRS with MediatR
 
-[x] Repository Pattern
+:white_check_mark: Repository Pattern
 
-[x] Npgsql and ADO.NET-compatible
+:white_check_mark: Npgsql and ADO.NET-compatible
 
-[x] Repository Pattern
+:white_check_mark: Repository Pattern
 
-[x] MediatR Pipeline Logging & Validation
+:white_check_mark: MediatR Pipeline Logging & Validation
 
-[x] Serilog
+:white_check_mark: Serilog
 
-[x] Swagger UI
+:white_check_mark: Swagger UI
 
-[x] Response Wrappers
+:white_check_mark: Response Wrappers
 
-[x] Healthchecks
+:white_check_mark: Healthchecks
 
-[x] Pagination
+:white_check_mark: Pagination
 
-[x] Microsoft Identity with JWT Authentication
+:white_check_mark: Microsoft Identity with JWT Authentication
 
-[x] Role based Authorization
+:white_check_mark: Role based Authorization
 
-[x] Database Seeding
+:white_check_mark: Database Seeding
 
-[x] Custom Exception Handling Middleware.
+:white_check_mark: Custom Exception Handling Middleware.
 
-[x] API Versioning
+:white_check_mark: API Versioning
 
-[x] User - Role - Group Management (Register/Confirmation Email)
+:white_check_mark: User - Role - Group Management (Register/Confirmation Email)
 
 
 This is the Swagger documentation:
