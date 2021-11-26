@@ -23,7 +23,7 @@ namespace Application.Features.Account.Commands.AddUserRole
         }
         public async Task<Response<bool>> Handle(AddUserRoleCommand command, CancellationToken cancellationToken)
         {
-            var result = await this.accountRepository.AssignRole(command.userid, command.roleid);
+            var result = await this.accountRepository.AssignRole(command.userid, command.roleid, cancellationToken);
             return new Response<bool>(result != null, message: "Role assigned");
         }
     }

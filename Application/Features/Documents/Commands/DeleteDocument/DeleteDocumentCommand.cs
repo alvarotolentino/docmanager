@@ -24,7 +24,7 @@ namespace Application.Features.Documents.Commands.DeleteDocument
         }
         public async Task<Response<long>> Handle(DeleteDocumentByIdCommand command, CancellationToken cancellationToken)
         {
-            var result = await this.documentRepositoryAsync.DeleteDocumentById(command.Id);
+            var result = await this.documentRepositoryAsync.DeleteDocumentById(command.Id, cancellationToken);
             return new Response<long>(result ? command.Id : 0);
 
 

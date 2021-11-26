@@ -23,7 +23,7 @@ namespace Application.Features.Account.Commands.DeleteAccount
         }
         public async Task<Response<bool>> Handle(DeleteAccountCommand command, CancellationToken cancellationToken)
         {
-            var result = await this.accountRepository.DeleteAccountById(command.id);
+            var result = await this.accountRepository.DeleteAccountById(command.id, cancellationToken);
             return new Response<bool>(result);
 
         }

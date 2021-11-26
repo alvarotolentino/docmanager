@@ -9,6 +9,7 @@ using Npgsql;
 using System.Data.Common;
 using Application.Interfaces.Services;
 using Application.Interfaces.Repositories;
+using System.Threading;
 
 namespace Infrastructure.Persistence.Repositories
 {
@@ -25,19 +26,19 @@ namespace Infrastructure.Persistence.Repositories
             this.authenticatedUserService = authenticatedUserService;
         }
 
-        public async Task<bool> DeleteDocumentById(long id)
+        public async Task<bool> DeleteDocumentById(long id, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("CALL \"usp_delete_document\" (@p_id)", connection))
             {
                 connection.Open();
                 cmd.Parameters.AddWithValue("@p_id", id);
-                var affected = await cmd.ExecuteNonQueryAsync();
+                var affected = await cmd.ExecuteNonQueryAsync(cancellationToken);
                 connection.Close();
                 return true;
             }
         }
 
-        public async Task<Documents> GetDocumentDataById(long id)
+        public async Task<Documents> GetDocumentDataById(long id, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("udf_get_document_data_by_id", connection))
             {
@@ -46,7 +47,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("p_id", id);
                 cmd.Prepare();
                 Documents documents = null;
-                using (var reader = await cmd.ExecuteReaderAsync())
+                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (reader.HasRows)
                     {
@@ -63,7 +64,7 @@ namespace Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<Documents> GetDocumentInfoById(long id)
+        public async Task<Documents> GetDocumentInfoById(long id, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("udf_get_document_info_by_id", connection))
             {
@@ -72,7 +73,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("p_id", id);
                 cmd.Prepare();
                 Documents documents = null;
-                using (var reader = await cmd.ExecuteReaderAsync())
+                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (reader.HasRows)
                     {
@@ -95,7 +96,7 @@ namespace Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<IReadOnlyList<Documents>> GetDocuments(int pageNumber, int pageSize)
+        public async Task<IReadOnlyList<Documents>> GetDocuments(int pageNumber, int pageSize, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("udf_get_documents_by_page_number_size", connection))
             {
@@ -106,7 +107,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Prepare();
 
                 List<Documents> documents = null;
-                using (var reader = await cmd.ExecuteReaderAsync())
+                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (reader.HasRows)
                     {
@@ -136,7 +137,7 @@ namespace Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<long> SaveDocument(Domain.Entities.Documents document)
+        public async Task<long> SaveDocument(Domain.Entities.Documents document, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("CALL \"usp_insert_document\" (@p_id, @p_name, @p_description, @p_dategory, @p_content_type, @p_length, @p_data, @p_created_at, @p_created_by)", connection))
             {
@@ -151,7 +152,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("@p_created_at", this.dateTimeService.UtcDateTime);
                 cmd.Parameters.AddWithValue("@p_created_by", this.authenticatedUserService.UserId);
                 cmd.Prepare();
-                await cmd.ExecuteNonQueryAsync();
+                await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var id = (long)cmd.Parameters["@p_id"].Value;
                 connection.Close();
                 return id;

@@ -25,7 +25,7 @@ namespace Application.Features.Groups.Queries.GetGroupById
         }
         public async Task<Response<GetGroupByIdViewModel>> Handle(GetGroupByIdQuery query, CancellationToken cancellationToken)
         {
-            var group = await this.groupRepositoryAsync.GetById(query.Id);
+            var group = await this.groupRepositoryAsync.GetById(query.Id, cancellationToken);
             if (group == null) throw new NotFoundException(ERRORTITLE);
             var groupViewModel = this.mapper.Map<GetGroupByIdViewModel>(group);
             return new Response<GetGroupByIdViewModel>(groupViewModel);

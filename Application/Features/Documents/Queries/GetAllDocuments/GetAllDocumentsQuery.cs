@@ -28,7 +28,7 @@ namespace Application.Features.Documents.Queries.GetAllDocuments
         public async Task<PagedResponse<IEnumerable<GetAllDocumentsViewModel>>> Handle(GetAllDocumentsQuery query, CancellationToken cancellationToken)
         {
             var filter = this.mapper.Map<GetAllDocumentsParameter>(query);
-            var documents = await this.documentRepositoryAsync.GetDocuments(filter.pagenumber, filter.pagesize);
+            var documents = await this.documentRepositoryAsync.GetDocuments(filter.pagenumber, filter.pagesize, cancellationToken);
             var documentsViewModels = documents != null ? this.mapper.Map<IEnumerable<GetAllDocumentsViewModel>>(documents) : Enumerable.Empty<GetAllDocumentsViewModel>();
             return new PagedResponse<IEnumerable<GetAllDocumentsViewModel>>(documentsViewModels, filter.pagenumber, filter.pagesize);
 

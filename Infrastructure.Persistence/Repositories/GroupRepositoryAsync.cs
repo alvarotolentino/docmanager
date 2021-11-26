@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
@@ -26,7 +27,7 @@ namespace Infrastructure.Persistence.Repositories
             this.authenticatedUserService = authenticatedUserService;
         }
 
-        public async Task<long> CreateGroup(Group group)
+        public async Task<long> CreateGroup(Group group, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("CALL \"usp_insert_group\" (@p_id, @p_name, @p_created_by, @p_created_at)", connection))
             {
@@ -35,26 +36,26 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("@p_name", parameterType: NpgsqlDbType.Varchar, group.Name);
                 cmd.Parameters.AddWithValue("@p_created_by", this.authenticatedUserService.UserId);
                 cmd.Parameters.AddWithValue("@p_created_at", this.dateTimeService.UtcDateTime);
-                await cmd.ExecuteNonQueryAsync();
+                await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var id = (long)cmd.Parameters["@p_id"].Value;
                 connection.Close();
                 return id;
             }
         }
 
-        public async Task<bool> DeleteGroup(long id)
+        public async Task<bool> DeleteGroup(long id, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("CALL \"usp_delete_group\" (@p_id)", connection))
             {
                 connection.Open();
                 cmd.Parameters.AddWithValue("@p_id", id);
-                var result = await cmd.ExecuteNonQueryAsync();
+                var result = await cmd.ExecuteNonQueryAsync(cancellationToken);
                 connection.Close();
                 return true;
             }
         }
 
-        public async Task<Group> Update(Group group)
+        public async Task<Group> Update(Group group, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("CALL \"usp_update_group\" (@p_result, @p_id, @p_name, @p_updated_by, @p_updated_at)", connection))
             {
@@ -64,14 +65,14 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("@p_name", group.Name);
                 cmd.Parameters.AddWithValue("@p_updated_by", this.authenticatedUserService.UserId);
                 cmd.Parameters.AddWithValue("@p_updated_at", this.dateTimeService.UtcDateTime);
-                await cmd.ExecuteNonQueryAsync();
+                await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var result = (int)cmd.Parameters["@p_result"].Value;
                 connection.Close();
                 return result == 1 ? new Group { Id = group.Id, Name = group.Name } : null;
             }
         }
 
-        public async Task<Group> GetById(long id)
+        public async Task<Group> GetById(long id, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("udf_get_group_by_id", connection))
             {
@@ -80,7 +81,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("p_id", id);
                 cmd.Prepare();
                 Group group = null;
-                using (var reader = await cmd.ExecuteReaderAsync())
+                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (reader.HasRows)
                     {
@@ -100,7 +101,7 @@ namespace Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<IReadOnlyList<Group>> GetGroups(int pageNumber, int pageSize)
+        public async Task<IReadOnlyList<Group>> GetGroups(int pageNumber, int pageSize, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("udf_get_groups_by_page_number_size", connection))
             {
@@ -110,7 +111,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("p_size", pageSize);
                 cmd.Prepare();
                 List<Group> groups = null;
-                using (var reader = await cmd.ExecuteReaderAsync())
+                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (reader.HasRows)
                     {

@@ -27,7 +27,7 @@ namespace Infrastructure.Persistence.Repositories
             this.dateTimeService = dateTimeService;
             this.authenticatedUserService = authenticatedUserService;
         }
-        public async Task<User> AddUserToGroup(UserGroup userGroup)
+        public async Task<User> AddUserToGroup(UserGroup userGroup, CancellationToken cancellationToken)
         {
             var user = new User() { Groups = new List<Group>() };
             using (var cmd = new NpgsqlCommand("udf_add_user_to_group", connection))
@@ -36,7 +36,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("p_userid", userGroup.UserId);
                 cmd.Parameters.AddWithValue("p_groupid", userGroup.GroupId);
-                using (var reader = await cmd.ExecuteReaderAsync())
+                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (reader.HasRows)
                     {
@@ -54,19 +54,19 @@ namespace Infrastructure.Persistence.Repositories
             return user;
         }
 
-        public async Task<bool> DeleteAccountById(long id)
+        public async Task<bool> DeleteAccountById(long id, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("CALL \"usp_delete_account\" (@p_id)", connection))
             {
                 connection.Open();
                 cmd.Parameters.AddWithValue("@p_id", id);
-                var affected = await cmd.ExecuteNonQueryAsync();
+                var affected = await cmd.ExecuteNonQueryAsync(cancellationToken);
                 connection.Close();
                 return true;
             }
         }
 
-        public async Task<User> AssignRole(long userId, long roleId)
+        public async Task<User> AssignRole(long userId, long roleId, CancellationToken cancellationToken)
         {
             var user = new User() { Roles = new List<Role>() };
             using (var cmd = new NpgsqlCommand("udf_assig_role_to_user", connection))
@@ -75,7 +75,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("p_userid", userId);
                 cmd.Parameters.AddWithValue("p_roleid", roleId);
-                using (var reader = await cmd.ExecuteReaderAsync())
+                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (reader.HasRows)
                     {
@@ -90,31 +90,6 @@ namespace Infrastructure.Persistence.Repositories
                 }
             }
             return user;
-        }
-
-        public Task<string> GetUserIdAsync(User user, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<string> GetUserNameAsync(User user, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task SetUserNameAsync(User user, string userName, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<string> GetNormalizedUserNameAsync(User user, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task SetNormalizedUserNameAsync(User user, string normalizedName, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
         }
 
         public async Task<IdentityResult> CreateAsync(User user, CancellationToken cancellationToken)
@@ -134,102 +109,14 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("p_password_hashed", user.PasswordHash);
                 cmd.Parameters.AddWithValue("p_created_at", this.dateTimeService.UtcDateTime);
                 cmd.Parameters.AddWithValue("p_created_by", this.authenticatedUserService.UserId);
-                
-                await cmd.ExecuteNonQueryAsync();
+
+                await cmd.ExecuteNonQueryAsync(cancellationToken);
                 connection.Close();
                 var alreadyExists = (bool)cmd.Parameters["p_user_exists"].Value;
                 var id = (long)cmd.Parameters["p_id"].Value;
 
                 return alreadyExists ? IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Email '{user.Email}' is already registered." } }) : IdentityResult.Success;
             }
-        }
-
-        public Task<IdentityResult> UpdateAsync(User user, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<IdentityResult> DeleteAsync(User user, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<User> FindByIdAsync(string userId, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<User> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void Dispose()
-        {
-            if (this.connection.State == ConnectionState.Open)
-            {
-                this.connection.Close();
-            }
-        }
-
-        public Task AddToRoleAsync(User user, string roleName, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task RemoveFromRoleAsync(User user, string roleName, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<IList<string>> GetRolesAsync(User user, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<bool> IsInRoleAsync(User user, string roleName, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<IList<User>> GetUsersInRoleAsync(string roleName, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task SetPasswordHashAsync(User user, string passwordHash, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<string> GetPasswordHashAsync(User user, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<bool> HasPasswordAsync(User user, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task SetEmailAsync(User user, string email, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<string> GetEmailAsync(User user, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<bool> GetEmailConfirmedAsync(User user, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task SetEmailConfirmedAsync(User user, bool confirmed, CancellationToken cancellationToken)
-        {
-            throw new System.NotImplementedException();
         }
 
         public async Task<User> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)
@@ -273,12 +160,55 @@ namespace Infrastructure.Persistence.Repositories
 
         }
 
-        public Task<string> GetNormalizedEmailAsync(User user, CancellationToken cancellationToken)
+        public void Dispose()
+        {
+            if (this.connection.State == ConnectionState.Open)
+            {
+                this.connection.Close();
+            }
+        }
+
+        public Task<IdentityResult> DeleteAsync(User user, CancellationToken cancellationToken)
         {
             throw new System.NotImplementedException();
         }
 
-        public Task SetNormalizedEmailAsync(User user, string normalizedEmail, CancellationToken cancellationToken)
+        public Task<User> FindByIdAsync(string userId, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<User> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<string> GetNormalizedUserNameAsync(User user, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<string> GetUserIdAsync(User user, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<string> GetUserNameAsync(User user, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task SetNormalizedUserNameAsync(User user, string normalizedName, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task SetUserNameAsync(User user, string userName, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<IdentityResult> UpdateAsync(User user, CancellationToken cancellationToken)
         {
             throw new System.NotImplementedException();
         }

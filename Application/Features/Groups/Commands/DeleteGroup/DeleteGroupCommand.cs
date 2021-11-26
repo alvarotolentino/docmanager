@@ -23,7 +23,7 @@ namespace Application.Features.Groups.Commands.DeleteGroup
         }
         public async Task<Response<bool>> Handle(DeleteGroupCommand command, CancellationToken cancellationToken)
         {
-            var result = await this.groupRepositoryAsync.DeleteGroup(command.id);
+            var result = await this.groupRepositoryAsync.DeleteGroup(command.id, cancellationToken);
             return new Response<bool>(data: result, message: result ? "Group and all users associated with were deleted successfully." : "Group was not found or deleted.");
         }
     }

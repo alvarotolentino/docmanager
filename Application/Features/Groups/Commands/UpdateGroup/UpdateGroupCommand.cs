@@ -29,7 +29,7 @@ namespace Application.Features.Groups.Commands.UpdateGroup
         public async Task<Response<UpdateGroupViewModel>> Handle(UpdateGroupCommand command, CancellationToken cancellationToken)
         {
             var request = this.mapper.Map<Group>(command);
-            var group = await this.groupRepositoryAsync.Update(request);
+            var group = await this.groupRepositoryAsync.Update(request, cancellationToken);
             if (group == null) throw new NotFoundException(ERRORTITLE);
             var groupViewModel = this.mapper.Map<UpdateGroupViewModel>(group);
             return new Response<UpdateGroupViewModel>(data: groupViewModel);

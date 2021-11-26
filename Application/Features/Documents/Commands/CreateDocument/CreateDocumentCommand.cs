@@ -30,7 +30,7 @@ namespace Application.Features.Documents.Commands.CreateDocument
         public async Task<Response<long>> Handle(CreateDocumentCommand command, CancellationToken cancellationToken)
         {
             var document = this.mapper.Map<Domain.Entities.Documents>(command);
-            var id = await this.documentRepositoryAsync.SaveDocument(document);
+            var id = await this.documentRepositoryAsync.SaveDocument(document, cancellationToken);
             return new Response<long>(id);
         }
     }

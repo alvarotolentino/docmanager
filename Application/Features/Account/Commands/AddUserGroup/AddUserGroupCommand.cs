@@ -27,7 +27,7 @@ namespace Application.Features.Account.Commands.AddUserGroup
         public async Task<Response<AddUserGroupViewModel>> Handle(AddUserGroupCommand command, CancellationToken cancellationToken)
         {
             var userGroup = this.mapper.Map<UserGroup>(command);
-            var result = await this.accountRepository.AddUserToGroup(userGroup);
+            var result = await this.accountRepository.AddUserToGroup(userGroup, cancellationToken);
             var addUserGroupViewModel = this.mapper.Map<AddUserGroupViewModel>(result);
             return new Response<AddUserGroupViewModel>(addUserGroupViewModel);
         }
