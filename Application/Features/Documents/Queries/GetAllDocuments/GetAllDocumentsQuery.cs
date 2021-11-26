@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Common;
@@ -28,7 +29,7 @@ namespace Application.Features.Documents.Queries.GetAllDocuments
         {
             var filter = this.mapper.Map<GetAllDocumentsParameter>(query);
             var documents = await this.documentRepositoryAsync.GetDocuments(filter.pagenumber, filter.pagesize);
-            var documentsViewModels = this.mapper.Map<IEnumerable<GetAllDocumentsViewModel>>(documents);
+            var documentsViewModels = documents != null ? this.mapper.Map<IEnumerable<GetAllDocumentsViewModel>>(documents) : Enumerable.Empty<GetAllDocumentsViewModel>();
             return new PagedResponse<IEnumerable<GetAllDocumentsViewModel>>(documentsViewModels, filter.pagenumber, filter.pagesize);
 
         }

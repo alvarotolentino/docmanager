@@ -1,6 +1,5 @@
 ﻿using Domain.Entities;
 using Domain.Settings;
-using Infrastructure.Persistence.Context;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +10,7 @@ using System.Text;
 using Application.Common;
 using Microsoft.AspNetCore.Http;
 using Utf8Json;
+using Infrastructure.Persistence.Repositories;
 
 namespace Infrastructure.Identity
 {
@@ -22,8 +22,11 @@ namespace Infrastructure.Identity
 
         public static void AddIdentityInfrastructureLayer(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddIdentity<User, IdentityRole<long>>()
-            .AddEntityFrameworkStores<ApplicationDbContext>()
+            
+            services.AddTransient<IUserStore<User>, AccountRepositoryAsync>();
+            services.AddTransient<IRoleStore<Role>, RoleRepositoryAsync>();
+            services.AddIdentity<User, Role>()
+            // .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
             services.Configure<JWTokenSettings>(configuration.GetSection("JWTokenSettings"));

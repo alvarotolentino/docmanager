@@ -16,6 +16,7 @@ using Application.Helpers;
 using System.Linq;
 using Domain.Entities;
 using Microsoft.Extensions.Options;
+using Application.Interfaces.Repositories;
 
 namespace Application.Features.Account.Commands.AuthenticateUser
 {
@@ -32,37 +33,37 @@ namespace Application.Features.Account.Commands.AuthenticateUser
 
         private const string ERRORTITLE = "Account Error";
 
-        private readonly UserManager<User> userManager;
-        private readonly SignInManager<User> signInManager;
+        private readonly IAccountRepositoryAsync accountRepository;
         private readonly JWTokenSettings jwtSettings;
+        private readonly IPasswordHasher<User> passwordHasher;
 
         public AuthenticateUserCommandHandler(
-            UserManager<User> userManager,
-            SignInManager<User> signInManager,
+            IAccountRepositoryAsync accountRepository,
+            IPasswordHasher<User> passwordHasher,
             IOptions<JWTokenSettings> jwtSettings)
         {
-            this.userManager = userManager;
-            this.signInManager = signInManager;
+            this.accountRepository = accountRepository;
             this.jwtSettings = jwtSettings.Value;
+            this.passwordHasher = passwordHasher;
+
         }
         public async Task<Response<AuthenticationUserViewModel>> Handle(AuthenticateUserCommand command, CancellationToken cancellationToken)
         {
-            var user = await this.userManager.FindByEmailAsync(command.email);
+            var user = await this.accountRepository.FindByEmailAsync(command.email, cancellationToken);
             if (user == null)
             {
                 throw new ApiException(ERRORTITLE, $"No Accounts Registered with {command.email}.");
             }
-            
-            var result = await this.signInManager.PasswordSignInAsync(user.UserName, command.password, false, lockoutOnFailure: false);
-            if (!result.Succeeded)
+
+            var result = this.passwordHasher.VerifyHashedPassword(user, user.PasswordHash, command.password);
+            if (result != PasswordVerificationResult.Success)
             {
                 throw new ApiException(ERRORTITLE, $"Invalid Credentials for '{command.email}'.");
             }
 
-            JwtSecurityToken jwtSecurityToken = await GetJWToken(user, command.ipaddress);
+            JwtSecurityToken jwtSecurityToken = GetJWToken(user, command.ipaddress);
             AuthenticationUserViewModel response = new AuthenticationUserViewModel();
             response.JWToken = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
-            var rolesList = await this.userManager.GetRolesAsync(user).ConfigureAwait(false);
             var refreshToken = GetRefreshToken(command.ipaddress);
             response.RefreshToken = refreshToken.Token;
             return new Response<AuthenticationUserViewModel>(response, $"Authenticated {user.UserName}");
@@ -90,16 +91,12 @@ namespace Application.Features.Account.Commands.AuthenticateUser
             };
         }
 
-        private async Task<JwtSecurityToken> GetJWToken(User user, string ipAddress)
+        private JwtSecurityToken GetJWToken(User user, string ipAddress)
         {
-            var userClaims = await this.userManager.GetClaimsAsync(user);
-            var roles = await this.userManager.GetRolesAsync(user);
-
             var roleClaims = new List<Claim>();
-
-            for (int i = 0; i < roles.Count; i++)
+            for (int i = 0; i < user.Roles.Count; i++)
             {
-                roleClaims.Add(new Claim("roles", roles[i]));
+                roleClaims.Add(new Claim("roles", user.Roles[i].Name));
             }
 
             ipAddress = ipAddress ?? NetworkHelper.GetIpAddress();
@@ -109,10 +106,11 @@ namespace Application.Features.Account.Commands.AuthenticateUser
                 new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim("first_name", user.FirstName.ToString()),
+                new Claim("last_name", user.LastName.ToString()),
                 new Claim("uid", user.Id.ToString()),
                 new Claim("ip", ipAddress)
             }
-            .Union(userClaims)
             .Union(roleClaims);
 
             var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(this.jwtSettings.Key));

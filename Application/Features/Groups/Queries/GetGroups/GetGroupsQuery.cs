@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Common;
@@ -29,7 +30,7 @@ namespace Application.Features.Groups.Queries.GetGroups
         {
             var filter = this.mapper.Map<GetAllGroupsParameter>(query);
             var groups = await this.groupRepositoryAsync.GetGroups(filter.pagenumber, filter.pagesize);
-            var groupsViewModels = this.mapper.Map<IEnumerable<GetGroupsViewModel>>(groups);
+            var groupsViewModels = groups != null ? this.mapper.Map<IEnumerable<GetGroupsViewModel>>(groups) : Enumerable.Empty<GetGroupsViewModel>();
             return new PagedResponse<IEnumerable<GetGroupsViewModel>>(groupsViewModels, filter.pagenumber, filter.pagesize);
         }
     }

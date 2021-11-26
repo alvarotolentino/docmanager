@@ -1,8 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
 using Application.Interfaces.Repositories;
 using Infrastructure.Persistence.Repositories;
 using Application.DTOs.Account;
@@ -26,17 +23,12 @@ namespace Infrastructure.Persistence
 
         public static void AddPersistenceInfrastructureLayer(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext<ApplicationDbContext>(o =>
-            {
-                o.UseNpgsql(configuration.GetConnectionString("DocumentManagerConnection"),
-                b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
-            });
-
             services.AddSingleton<DbConnection, NpgsqlConnection>(provider => new NpgsqlConnection(configuration.GetConnectionString("DocumentManagerConnection")));
 
             services.AddTransient<IDocumentRepositoryAsync, DocumentRepositoryAsync>();
             services.AddTransient<IAccountRepositoryAsync, AccountRepositoryAsync>();
             services.AddTransient<IGroupRepositoryAsync, GroupRepositoryAsync>();
+            services.AddTransient<IRoleRepositoryAsync, RoleRepositoryAsync>();
 
         }
     }

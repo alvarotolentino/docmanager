@@ -18,14 +18,12 @@ using Microsoft.OpenApi.Models;
 using Utf8Json;
 using HealthChecks.NpgSql;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.EntityFrameworkCore;
 using DocManager.Api.Health;
 using DocManager.Api.Middleware;
 using FluentValidation;
 using MediatR;
 using Application;
 using Infrastructure.Persistence;
-using Infrastructure.Persistence.Context;
 using Infrastructure.Shared;
 using Application.Interfaces.Services;
 using DocManager.Api.Services;
@@ -43,7 +41,6 @@ namespace DocManager.Api
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddApplicationLayer();
@@ -61,7 +58,6 @@ namespace DocManager.Api
 
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app,
         IWebHostEnvironment env)
         {
@@ -116,14 +112,14 @@ namespace DocManager.Api
 
         public static IServiceCollection AddCustomMVC(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddControllers();
-            // .AddMvcOptions(options =>
-            // {
-            //     // options.OutputFormatters.Clear();
-            //     options.OutputFormatters.Add(new Utf8JsonOutputFormatter(Utf8Json.Resolvers.StandardResolver.Default));
-            //     // options.InputFormatters.Clear();
-            //     options.InputFormatters.Add(new Utf8JsonInputFormatter());
-            // });
+            services.AddControllers()
+            .AddMvcOptions(options =>
+            {
+                options.OutputFormatters.Clear();
+                options.OutputFormatters.Add(new Utf8JsonOutputFormatter(Utf8Json.Resolvers.StandardResolver.Default));
+                options.InputFormatters.Clear();
+                options.InputFormatters.Add(new Utf8JsonInputFormatter());
+            });
 
             services.AddCors(options =>
             {
@@ -190,8 +186,7 @@ namespace DocManager.Api
 
         public static IServiceCollection AddCustomHealthCheck(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddHealthChecks()
-            .AddDbContextCheck<ApplicationDbContext>();
+            services.AddHealthChecks();
 
             return services;
         }

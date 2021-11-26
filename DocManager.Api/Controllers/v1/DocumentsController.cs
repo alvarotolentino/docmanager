@@ -57,9 +57,7 @@ namespace DocManager.Api.Controllers.v1
         /// <summary>
         /// Uploads a new document
         /// </summary>
-        /// <param name="file"></param>
-        /// <param name="description"></param>
-        /// <param name="category"></param>
+        /// <param name="command"></param>
         /// <returns></returns>
         [Authorize(UserRoles.Admin, UserRoles.Manager)]
         [HttpPost("upload")]

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Application.Features.Account.Commands.AddUserGroup;
+using Application.Features.Account.Commands.RegisterAccount;
 using Application.Features.Documents.Commands.CreateDocument;
 using Application.Features.Documents.Queries.DownloadDocumentById;
 using Application.Features.Documents.Queries.GetAllDocuments;
@@ -78,15 +79,11 @@ namespace Application.Mappings
             .ForMember(dto => dto.GroupName, opts => opts.Ignore())
             .AfterMap((source, destination) =>
             {
-                var ids = source.UserGroups.Select(x => x.Group).Select(x => x.Id).ToList();
-                var names = source.UserGroups.Select(x => x.Group).Select(x => x.Name).ToList();
+                var ids = source.Groups.Select(x => x.Id).ToList();
+                var names = source.Groups.Select(x => x.Name).ToList();
                 destination.GroupId = string.Join(",", ids);
                 destination.GroupName = string.Join(",", names);
             });
-            ;
-
-
-
 
         }
 

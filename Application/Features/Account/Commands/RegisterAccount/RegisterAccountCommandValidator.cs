@@ -7,29 +7,29 @@ namespace Application.Features.Account.Commands.RegisterAccount
     {
         public RegisterAccountCommandValidator()
         {
-            RuleFor(p => p.firstname)
+            RuleFor(p => p.FirstName)
             .NotEmpty().WithMessage("{PropertyName} is required.")
             .NotNull();
-            RuleFor(p => p.lastname)
+            RuleFor(p => p.LastName)
             .NotEmpty().WithMessage("{PropertyName} is required.")
             .NotNull();
-            RuleFor(p => p.email)
+            RuleFor(p => p.Email)
             .NotEmpty().WithMessage("{PropertyName} is required.")
             .NotNull()
             .EmailAddress(EmailValidationMode.Net4xRegex)
             .WithMessage("A valid email is required");
-            RuleFor(p => p.username)
+            RuleFor(p => p.UserName)
             .NotEmpty().WithMessage("{PropertyName} is required.")
             .NotNull()
             .MinimumLength(6);
-            RuleFor(p => p.password)
+            RuleFor(p => p.Password)
             .NotEmpty().WithMessage("{PropertyName} is required.")
             .NotNull()
             .MinimumLength(6);
-            RuleFor(p => p.confirmpassword)
+            RuleFor(p => p.ConfirmPassword)
             .NotEmpty().WithMessage("{PropertyName} is required.")
             .NotNull()
-            .Equal(p => p.password)
+            .Equal(p => p.Password)
             .WithMessage("Passwords must match");
 
         }

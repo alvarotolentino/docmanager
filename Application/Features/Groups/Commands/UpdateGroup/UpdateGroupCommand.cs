@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Common;
+using Application.Exceptions;
 using Application.Interfaces.Repositories;
 using AutoMapper;
 using Domain.Entities;
@@ -16,6 +17,7 @@ namespace Application.Features.Groups.Commands.UpdateGroup
 
     public class UpdateGroupCommandHandler : IRequestHandler<UpdateGroupCommand, Response<UpdateGroupViewModel>>
     {
+        private const string ERRORTITLE = "Group Error";
 
         private readonly IGroupRepositoryAsync groupRepositoryAsync;
         private readonly IMapper mapper;
@@ -28,6 +30,7 @@ namespace Application.Features.Groups.Commands.UpdateGroup
         {
             var request = this.mapper.Map<Group>(command);
             var group = await this.groupRepositoryAsync.Update(request);
+            if (group == null) throw new NotFoundException(ERRORTITLE);
             var groupViewModel = this.mapper.Map<UpdateGroupViewModel>(group);
             return new Response<UpdateGroupViewModel>(data: groupViewModel);
         }
