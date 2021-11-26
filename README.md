@@ -9,7 +9,7 @@ Features:
 
 [x] Repository Pattern
 
-[x] Dapper/EF
+[x] Npgsql and ADO.NET-compatible
 
 [x] Repository Pattern
 
@@ -42,6 +42,10 @@ This is the Swagger documentation:
 
 ![Swagger](swagger.png)
 
+Example of confirmation email, when an account is registered:
+
+![ConfirmationEmail](confirmation_email.png)
+
 The resouces are grouped as follows:
 
 * Accounts: Creates a new account, assign roles and groups.
@@ -66,17 +70,16 @@ There are the list of components:
 
 ## How to run the app?
 * Ensure the connectionstring in the __appsettings.json__ file is correct.
-* From the folder __Infrastructure.Persistence__ execute the following command on console.
-```
-dotnet-ef database update
-```
-The above command creates the database and apply all migrations.
+* Run the __InitialMigration.sql__ script which initialize the database objects (tables, index, procedures)
+
 
 Finally, from the root folder execute the following command:
 
 ```
 dotnet "run" "--project" "c:\Source\repos\DocManager\DocManager.Api\DocManager.Api.csproj" 
 ```
+
+To debug just press __F5__ keyboard.
 
 The following URLs will be available:
 
