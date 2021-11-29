@@ -3,6 +3,8 @@ using System.IO;
 using System.Linq;
 using Application.Features.Account.Commands.AddUserGroup;
 using Application.Features.Account.Commands.RegisterAccount;
+using Application.Features.Documents.Commands.AssignGroupPermission;
+using Application.Features.Documents.Commands.AssignUserPermission;
 using Application.Features.Documents.Commands.CreateDocument;
 using Application.Features.Documents.Queries.DownloadDocumentById;
 using Application.Features.Documents.Queries.GetAllDocuments;
@@ -85,6 +87,11 @@ namespace Application.Mappings
                 destination.GroupName = string.Join(",", names);
             });
 
+            CreateMap<AssignUserPermissionCommand, UserDocument>();
+            CreateMap<UserDocument, AssignUserPermissionViewModel>();
+            CreateMap<AssignGroupPermissionCommand, GroupDocument>();
+            CreateMap<GroupDocument, AssignGroupPermissionViewModel>();
+            
         }
 
         private static string FormatSize(long size)

@@ -7,6 +7,7 @@ using Application.Features.Account.Commands.AddUserRole;
 using Application.Features.Account.Commands.RegisterAccount;
 using Application.Interfaces;
 using DocManager.Api.Attributes;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DocManager.Api.Controllers
@@ -25,7 +26,13 @@ namespace DocManager.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateAccount([FromBody] RegisterAccountCommand command)
         {
-            return Ok(await Mediator.Send(command));
+            var response = await Mediator.Send(command);
+            if (response.Succeeded)
+                return StatusCode(StatusCodes.Status201Created, response);
+
+            // TODO: Validate 400 error or Validation Exception 
+            return Ok(response);
+            
         }
 
         /// <summary>

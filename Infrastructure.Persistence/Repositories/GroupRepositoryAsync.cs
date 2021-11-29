@@ -29,17 +29,19 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<long> CreateGroup(Group group, CancellationToken cancellationToken)
         {
-            using (var cmd = new NpgsqlCommand("CALL \"usp_insert_group\" (@p_id, @p_name, @p_created_by, @p_created_at)", connection))
+            using (var cmd = new NpgsqlCommand("CALL \"usp_insert_group\" (@p_id, @p_exists_id, @p_name, @p_created_by, @p_created_at)", connection))
             {
                 connection.Open();
                 cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int64) { Value = -1, Direction = ParameterDirection.InputOutput });
+                cmd.Parameters.Add(new NpgsqlParameter("@p_exists_id", DbType.Int64) { Value = -1, Direction = ParameterDirection.InputOutput });
                 cmd.Parameters.AddWithValue("@p_name", parameterType: NpgsqlDbType.Varchar, group.Name);
                 cmd.Parameters.AddWithValue("@p_created_by", this.authenticatedUserService.UserId);
                 cmd.Parameters.AddWithValue("@p_created_at", this.dateTimeService.UtcDateTime);
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
+                var existingId = (long)cmd.Parameters["@p_exists_id"].Value;
                 var id = (long)cmd.Parameters["@p_id"].Value;
                 connection.Close();
-                return id;
+                return existingId > 0 ? existingId : id;
             }
         }
 

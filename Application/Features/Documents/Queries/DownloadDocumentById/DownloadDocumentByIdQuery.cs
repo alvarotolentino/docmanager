@@ -27,7 +27,7 @@ namespace Application.Features.Documents.Queries.DownloadDocumentById
         public async Task<Response<DownloadDocumentViewModel>> Handle(DownloadDocumentByIdQuery query, CancellationToken cancellationToken)
         {
             var document = await documentRepositoryAsync.GetDocumentDataById(query.id, cancellationToken);
-            if (document == null) throw new ApiException(ERRORTITLE, "Document not found");
+            if (document == null) return new Response<DownloadDocumentViewModel>(null, "Document not found or you do not have permissions.", succeeded: false);
             var documentViewModel = this.mapper.Map<DownloadDocumentViewModel>(document);
             return new Response<DownloadDocumentViewModel>(data: documentViewModel);
         }

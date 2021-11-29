@@ -45,6 +45,7 @@ namespace Infrastructure.Persistence.Repositories
                 connection.Open();
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("p_id", id);
+                cmd.Parameters.AddWithValue("p_userid", this.authenticatedUserService.UserId);
                 cmd.Prepare();
                 Documents documents = null;
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
@@ -71,6 +72,7 @@ namespace Infrastructure.Persistence.Repositories
                 connection.Open();
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("p_id", id);
+                cmd.Parameters.AddWithValue("p_userid", this.authenticatedUserService.UserId);
                 cmd.Prepare();
                 Documents documents = null;
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
@@ -104,6 +106,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("p_number", pageNumber);
                 cmd.Parameters.AddWithValue("p_size", pageSize);
+                cmd.Parameters.AddWithValue("p_userid", this.authenticatedUserService.UserId);
                 cmd.Prepare();
 
                 List<Documents> documents = null;
@@ -165,6 +168,52 @@ namespace Infrastructure.Persistence.Repositories
             if (this.connection.State == ConnectionState.Open)
             {
                 this.connection.Close();
+            }
+        }
+
+        public async Task<UserDocument> AssingUserPermissionAsync(UserDocument userDocument, CancellationToken cancellationToken)
+        {
+            using (var cmd = new NpgsqlCommand("udf_assig_user_document_permission", connection))
+            {
+                connection.Open();
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("p_userid", userDocument.UserId);
+                cmd.Parameters.AddWithValue("p_documentid", userDocument.DocumentId);
+
+                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
+                {
+                    if (reader.HasRows)
+                    {
+                        reader.Read();
+                        userDocument.UserName = reader["user_name"].ToString();
+                        userDocument.DocumentName = reader["document_name"].ToString();
+                        return userDocument;
+                    }
+                    return null;
+                }
+            }
+        }
+
+        public async Task<GroupDocument> AssingGroupPermissionAsync(GroupDocument groupDocument, CancellationToken cancellationToken)
+        {
+            using (var cmd = new NpgsqlCommand("udf_assig_group_document_permission", connection))
+            {
+                connection.Open();
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("p_groupid", groupDocument.GroupId);
+                cmd.Parameters.AddWithValue("p_documentid", groupDocument.DocumentId);
+
+                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
+                {
+                    if (reader.HasRows)
+                    {
+                        reader.Read();
+                        groupDocument.GroupName = reader["user_name"].ToString();
+                        groupDocument.DocumentName = reader["document_name"].ToString();
+                        return groupDocument;
+                    }
+                    return null;
+                }
             }
         }
     }

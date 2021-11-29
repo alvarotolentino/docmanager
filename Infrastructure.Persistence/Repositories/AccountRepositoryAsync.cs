@@ -122,42 +122,55 @@ namespace Infrastructure.Persistence.Repositories
         public async Task<User> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)
         {
 
-            using (var cmd = new NpgsqlCommand("udf_find_user_by_email", connection))
+            using (var cmd = new NpgsqlCommand(@"
+            SELECT * FROM udf_find_user_by_email (@p_email);
+            SELECT * FROM udf_find_user_roles_by_email (@p_email);
+            SELECT * FROM udf_find_user_groups_by_email (@p_email)
+            ", connection))
             {
-                var user = new User() { Roles = new List<Role>() };
+                var user = new User() { Roles = new List<Role>(), Groups = new List<Group>() };
                 connection.Open();
-                cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("p_email", normalizedEmail);
                 cmd.Prepare();
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
-                    while (reader.Read())
-                    {
-                        if (string.IsNullOrWhiteSpace(user.UserName))
-                        {
-                            user.Id = (long)reader["user_id"];
-                            user.FirstName = reader["first_name"].ToString();
-                            user.LastName = reader["last_name"].ToString();
-                            user.UserName = reader["user_name"].ToString();
-                            user.Email = reader["email"].ToString();
-                            user.PasswordHash = reader["password_hash"].ToString();
-                        }
 
-                        var value = reader["role_name"].ToString();
-                        if (!string.IsNullOrWhiteSpace(value))
+                    if (!reader.HasRows)
+                        return null;
+
+                    reader.Read();
+                    user.Id = (long)reader["user_id"];
+                    user.FirstName = reader["first_name"].ToString();
+                    user.LastName = reader["last_name"].ToString();
+                    user.UserName = reader["user_name"].ToString();
+                    user.Email = reader["email"].ToString();
+                    user.PasswordHash = reader["password_hash"].ToString();
+
+                    if (reader.NextResult() && reader.HasRows)
+                    {
+                        while (reader.Read())
                         {
                             var role = new Role();
-                            role.Name = value;
-                            role.Id = (long)reader["role_id"];
+                            role.Id = (long)reader["id"];
+                            role.Name = reader["name"].ToString();
                             user.Roles.Add(role);
+                        }
+                    }
+
+                    if (reader.NextResult() && reader.HasRows)
+                    {
+                        while (reader.Read())
+                        {
+                            var group = new Group();
+                            group.Id = (long)reader["id"];
+                            group.Name = reader["name"].ToString();
+                            user.Groups.Add(group);
                         }
                     }
                 }
                 connection.Close();
                 return user;
             }
-
-
         }
 
         public void Dispose()

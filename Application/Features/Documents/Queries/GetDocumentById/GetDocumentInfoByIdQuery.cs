@@ -25,7 +25,7 @@ namespace Application.Features.Documents.Queries.GetDocumentById
         public async Task<Response<GetDocumentInfoViewModel>> Handle(GetDocumentInfoByIdQuery query, CancellationToken cancellationToken)
         {
             var document = await documentRepositoryAsync.GetDocumentInfoById(query.id, cancellationToken);
-            if (document == null) throw new NotFoundException(ERRORTITLE);
+            if (document == null) return new Response<GetDocumentInfoViewModel>(null, "Document not found or you do not have permissions.", succeeded: false);
             var documentViewModel = this.mapper.Map<GetDocumentInfoViewModel>(document);
             return new Response<GetDocumentInfoViewModel>(data: documentViewModel);
         }

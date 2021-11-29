@@ -98,6 +98,11 @@ namespace Application.Features.Account.Commands.AuthenticateUser
             {
                 roleClaims.Add(new Claim("roles", user.Roles[i].Name));
             }
+            var groupClaims = new List<Claim>();
+            for (int i = 0; i < user.Groups.Count; i++)
+            {
+                groupClaims.Add(new Claim("groups", user.Groups[i].Name));
+            }
 
             ipAddress = ipAddress ?? NetworkHelper.GetIpAddress();
 
@@ -111,7 +116,8 @@ namespace Application.Features.Account.Commands.AuthenticateUser
                 new Claim("uid", user.Id.ToString()),
                 new Claim("ip", ipAddress)
             }
-            .Union(roleClaims);
+            .Union(roleClaims)
+            .Union(groupClaims);
 
             var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(this.jwtSettings.Key));
             var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);

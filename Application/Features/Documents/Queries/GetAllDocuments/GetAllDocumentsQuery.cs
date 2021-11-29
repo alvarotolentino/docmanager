@@ -29,7 +29,8 @@ namespace Application.Features.Documents.Queries.GetAllDocuments
         {
             var filter = this.mapper.Map<GetAllDocumentsParameter>(query);
             var documents = await this.documentRepositoryAsync.GetDocuments(filter.pagenumber, filter.pagesize, cancellationToken);
-            var documentsViewModels = documents != null ? this.mapper.Map<IEnumerable<GetAllDocumentsViewModel>>(documents) : Enumerable.Empty<GetAllDocumentsViewModel>();
+            if (documents == null) return new PagedResponse<IEnumerable<GetAllDocumentsViewModel>>(null, filter.pagenumber, filter.pagesize);
+            var documentsViewModels = this.mapper.Map<IEnumerable<GetAllDocumentsViewModel>>(documents);
             return new PagedResponse<IEnumerable<GetAllDocumentsViewModel>>(documentsViewModels, filter.pagenumber, filter.pagesize);
 
         }

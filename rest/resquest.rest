@@ -28,7 +28,7 @@ Content-Type: application/json
 Authorization: Bearer {{token.response.body.$.Data.JWToken}}
 
 {
-    "name": "test"
+    "name": "demo"
 }
 ###
 GET https://localhost:5001/api/v1/Groups HTTP/1.1

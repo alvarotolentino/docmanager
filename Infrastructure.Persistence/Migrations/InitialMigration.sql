@@ -138,11 +138,19 @@ begin
 
     create unique index if not exists "IX_role_name_index" on "role" (name);
 
+    alter table "role" add constraint "unique_role_name" unique using index "IX_role_name_index";
+
     create index if not exists "IX_role_claims_role_id" on role_claims (role_id);
 
     create index if not exists "IX_email_index" on "user" (email);
 
     create unique index if not exists "IX_user_name_index" on "user" (user_name);
+
+    alter table "user" add constraint "unique_user_name" unique using index "IX_user_name_index";
+
+    create unique index if not exists "IX_user_email_index" on "user" (email);
+
+    alter table "user" add constraint "unique_user_email" unique using index "IX_user_email_index";
 
     create index if not exists "IX_user_claim_user_id" on user_claim (user_id);
 
@@ -168,6 +176,10 @@ begin
 
     create index if not exists "IX_document_group_permission_document_id" on document_group_permission (document_id);
 
+    create unique index if not exists "IX_group_name_index" on "group" (name);
+
+    alter table "group" add constraint "unique_group_name" unique using index "IX_group_name_index";
+
     raise info 'Finishing creating indexes';
     
     raise info 'Starting creating functions and procedures';
@@ -189,7 +201,7 @@ begin
         FROM documents doc;  
     $BODY$;
 
-    CREATE OR REPLACE FUNCTION udf_get_documents_by_page_number_size(p_number INTEGER = NULL,  p_size INTEGER = NULL)
+    CREATE OR REPLACE FUNCTION udf_get_documents_by_page_number_size(p_number INTEGER = NULL,  p_size INTEGER = NULL, p_userid bigint = NULL)
     RETURNS TABLE (id bigint, name character varying, description character varying, category character varying, content_type character varying, length bigint, created_by bigint, created_at timestamp, updated_by bigint, updated_at timestamp) 
     AS
     $BODY$
@@ -211,41 +223,62 @@ begin
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_get_document_info_by_id(
-    p_id bigint = NULL
+    p_id bigint = NULL, p_userid bigint = NULL
     )
     RETURNS TABLE (id bigint, name character varying, description character varying, category character varying, content_type character varying, length bigint, created_by bigint, created_at timestamp, updated_by bigint, updated_at timestamp) 
     AS
     $BODY$
     BEGIN
-        RETURN QUERY
-        SELECT doc.id,
-        doc.name, doc.description, doc.category, doc.content_type, doc.length, doc.created_by, doc.created_at, doc.updated_by, doc.updated_at
-        FROM documents doc
-        WHERE doc.id = p_id;
+        IF EXISTS (SELECT FROM document_user_permission dupp WHERE dupp.user_id = p_userid AND dupp.document_id = p_id) THEN
+                RETURN QUERY
+                SELECT doc.id,
+                doc.name, doc.description, doc.category, doc.content_type, doc.length, doc.created_by, doc.created_at, doc.updated_by, doc.updated_at
+                FROM documents doc
+                WHERE doc.id = p_id; 
+        ELSEIF EXISTS (SELECT FROM document_group_permission dgp INNER JOIN user_group ug ON dgp.group_id = ug.group_id WHERE ug.user_id = p_userid AND dgp.document_id = p_id) THEN
+                RETURN QUERY
+                SELECT doc.id,
+                doc.name, doc.description, doc.category, doc.content_type, doc.length, doc.created_by, doc.created_at, doc.updated_by, doc.updated_at
+                FROM documents doc
+                WHERE doc.id = p_id;
+        END IF;
     END
     $BODY$
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_get_document_data_by_id(
-    p_id bigint = NULL
+    p_id bigint = NULL, p_userid bigint = NULL
     )
     RETURNS TABLE (name character varying, content_type character varying, length bigint, data bytea) 
     AS
     $BODY$
     BEGIN
-        RETURN QUERY
-        SELECT doc.name, doc.content_type, doc.length, doc.data
-        FROM documents doc
-        WHERE doc.id = p_id;
+        IF EXISTS (SELECT FROM document_user_permission dupp WHERE dupp.user_id = p_userid AND dupp.document_id = p_id) THEN
+            RETURN QUERY
+            SELECT doc.name, doc.content_type, doc.length, doc.data
+            FROM documents doc
+            WHERE doc.id = p_id;
+        ELSEIF EXISTS (SELECT FROM document_group_permission dgp INNER JOIN user_group ug ON dgp.group_id = ug.group_id WHERE ug.user_id = p_userid AND dgp.document_id = p_id) THEN
+            RETURN QUERY
+            SELECT doc.name, doc.content_type, doc.length, doc.data
+            FROM documents doc
+            WHERE doc.id = p_id;
+        END IF;
+
+
     END
     $BODY$
     LANGUAGE plpgsql;
 
-    CREATE OR REPLACE PROCEDURE usp_insert_group(p_id INOUT bigint = NULL, p_name character varying = NULL, p_created_by bigint = NULL, p_created_at timestamp with time zone = NULL)
+    CREATE OR REPLACE PROCEDURE usp_insert_group(p_id INOUT bigint = NULL, p_exists_id INOUT bigint = NULL , p_name character varying = NULL, p_created_by bigint = NULL, p_created_at timestamp with time zone = NULL)
     AS $BODY$
     BEGIN
-        INSERT INTO "group" (name, created_by, created_at, updated_by, updated_at) VALUES
-		(p_name, p_created_by, p_created_at, p_created_by, p_created_at) RETURNING "id" INTO p_id;
+        IF EXISTS (SELECT FROM "group" WHERE "name" = p_name) THEN
+            SELECT 0, id INTO p_id, p_exists_id FROM "group" WHERE "name" = p_name;
+        ELSE
+            INSERT INTO "group" (name, created_by, created_at, updated_by, updated_at) VALUES
+            (p_name, p_created_by, p_created_at, p_created_by, p_created_at) RETURNING "id", 0 INTO p_id, p_exists_id;
+        END IF;
     END
     $BODY$
     LANGUAGE plpgsql;
@@ -324,8 +357,13 @@ begin
     CREATE OR REPLACE PROCEDURE usp_insert_document(p_id INOUT bigint = NULL,p_name character varying = NULL,p_description character varying = NULL,p_dategory character varying = NULL,p_content_type character varying = NULL,p_length bigint = NULL,p_data bytea = NULL,p_created_at timestamp with time zone = NULL,p_created_by bigint = NULL)
     AS $BODY$
     BEGIN
-        INSERT INTO "documents" (name,description,category,content_type,length,data,created_by,created_at,updated_by,updated_at) VALUES
-		(p_name,p_description,p_dategory,p_content_type,p_length,p_data,p_created_by,p_created_at,p_created_by,p_created_at) RETURNING "id" INTO p_id;
+        WITH save_document AS (
+            INSERT INTO "documents" (name,description,category,content_type,length,data,created_by,created_at,updated_by,updated_at) VALUES
+		    (p_name,p_description,p_dategory,p_content_type,p_length,p_data,p_created_by,p_created_at,p_created_by,p_created_at) RETURNING "id"
+        )
+        INSERT INTO document_user_permission (user_id, document_id)
+        SELECT p_created_by, (SELECT id FROM save_document)
+        RETURNING document_id INTO p_id;
     END
     $BODY$
     LANGUAGE plpgsql;
@@ -410,15 +448,98 @@ begin
     CREATE OR REPLACE FUNCTION udf_find_user_by_email (
         p_email character varying = NULL
     )
-    RETURNS TABLE (user_id bigint, first_name character varying, last_name character varying, user_name character varying, password_hash text, role_id bigint, role_name character varying, email character varying)
+    RETURNS TABLE (user_id bigint, first_name character varying, last_name character varying, user_name character varying, password_hash text, email character varying)
     AS $BODY$
     BEGIN 
 		RETURN QUERY
-        SELECT u.id AS user_id ,u.first_name,u.last_name,u.user_name,u.password_hash, r.id AS role_id, r.name AS role_name, u.email
+        SELECT u.id AS user_id ,u.first_name,u.last_name,u.user_name,u.password_hash, u.email
         FROM "user" u
-        INNER JOIN "user_role" ur ON u.id = ur.user_id
-        INNER JOIN "role" r on ur.role_id = r.id 
         WHERE u.email = p_email;
+    END
+    $BODY$
+    LANGUAGE plpgsql;
+	
+    CREATE OR REPLACE FUNCTION udf_find_user_roles_by_email (
+        p_email character varying = NULL
+    )
+    RETURNS TABLE (id bigint, name character varying)
+    AS $BODY$
+    BEGIN 
+		RETURN QUERY
+        SELECT r.id, r.name 
+		FROM "role" r
+		INNER JOIN "user_role" ur ON r.id = ur.role_id
+		INNER JOIN "user" u ON ur.user_id = u.id
+        WHERE u.email = p_email;
+    END
+    $BODY$
+    LANGUAGE plpgsql;
+	
+    CREATE OR REPLACE FUNCTION udf_find_user_groups_by_email (
+        p_email character varying = NULL
+    )
+    RETURNS TABLE (id bigint, name character varying)
+    AS $BODY$
+    BEGIN 
+		RETURN QUERY
+        SELECT g.id, g.name 
+		FROM "group" g
+		INNER JOIN "user_group" ug ON g.id = ug.group_id
+		INNER JOIN "user" u ON ug.user_id = u.id
+        WHERE u.email = p_email;
+    END
+    $BODY$
+    LANGUAGE plpgsql;
+
+    CREATE OR REPLACE FUNCTION udf_assig_user_document_permission(
+    p_userid bigint = NULL, p_documentid bigint = NULL
+    )
+    RETURNS TABLE (user_id bigint, document_id bigint, user_name character varying, document_name character varying) 
+    AS
+    $BODY$
+    BEGIN
+
+        IF EXISTS (SELECT FROM "documents" WHERE id = p_documentid) THEN
+            IF EXISTS (SELECT FROM "user" WHERE id = p_userid) THEN
+                IF NOT EXISTS (SELECT FROM document_user_permission du WHERE du.user_id = p_userid AND du.document_id = p_documentid) THEN
+                    INSERT INTO document_user_permission (user_id, document_id) VALUES (p_userid, p_documentid);
+                END IF;
+            END IF;
+        END IF;
+
+        RETURN QUERY
+        SELECT u.id AS user_id, ug.group_id , u.user_name, d.name as document_name
+        FROM "user" u
+        INNER JOIN document_user_permission du ON u.id = du.user_id
+        INNER JOIN "documents" d ON du.document_id = d.id
+        WHERE u.id = p_userid AND d.id = p_documentid;
+
+    END
+    $BODY$
+    LANGUAGE plpgsql;
+
+    CREATE OR REPLACE FUNCTION udf_assig_group_document_permission(
+    p_groupid bigint = NULL, p_documentid bigint = NULL
+    )
+    RETURNS TABLE (group_id bigint, document_id bigint, group_name character varying, document_name character varying) 
+    AS
+    $BODY$
+    BEGIN
+
+        IF EXISTS (SELECT FROM "documents" WHERE id = p_documentid) THEN
+            IF EXISTS (SELECT FROM "group" WHERE id = p_groupid) THEN
+                IF NOT EXISTS (SELECT FROM document_group_permission dg WHERE dg.group_id = p_groupid AND dg.document_id = p_documentid) THEN
+                    INSERT INTO document_group_permission (group_id, document_id) VALUES (p_userid, p_documentid);
+                END IF;
+            END IF;
+        END IF;
+
+        RETURN QUERY
+        SELECT g.id AS group_id, d.id AS document_id, g.name AS group_name, d.name as document_name
+        FROM "group" g
+		INNER JOIN document_group_permission dg ON g.id = dg.group_id
+		INNER JOIN "documents" d ON dg.document_id = d.id
+        WHERE g.id = p_groupid AND d.id = p_documentid;
     END
     $BODY$
     LANGUAGE plpgsql;
