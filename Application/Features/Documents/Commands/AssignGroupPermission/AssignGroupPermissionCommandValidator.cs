@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Application.Features.Documents.Commands.AssignGroupPermission
 {
-    public class AssignGroupPermissionCommandValidator : AbstractValidator<AssignGroupPermissionCommand>
+    public class AssignGroupPermissionValidator : AbstractValidator<AssignGroupPermission>
     {
-        public AssignGroupPermissionCommandValidator()
+        public AssignGroupPermissionValidator()
         {
             RuleFor(p => p.GroupId)
             .NotEmpty().WithMessage("{PropertyName} is required.")

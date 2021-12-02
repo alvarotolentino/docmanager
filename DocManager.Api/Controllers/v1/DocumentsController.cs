@@ -67,14 +67,14 @@ namespace DocManager.Api.Controllers.v1
         /// <summary>
         /// Uploads a new document
         /// </summary>
-        /// <param name="command"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         [Authorize(UserRoles.Admin, UserRoles.Manager)]
         [HttpPost("upload")]
-        public async Task<IActionResult> CreateDocument([FromForm] CreateDocumentCommand command)
+        public async Task<IActionResult> CreateDocument([FromForm] CreateDocument request)
         {
 
-            var result = await Mediator.Send(command);
+            var result = await Mediator.Send(request);
 
             if (result.Succeeded)
                 return StatusCode(StatusCodes.Status201Created, result);
@@ -91,7 +91,7 @@ namespace DocManager.Api.Controllers.v1
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocument(long id)
         {
-            return Ok(await Mediator.Send(new DeleteDocumentByIdCommand { Id = id }));
+            return Ok(await Mediator.Send(new DeleteDocumentById { Id = id }));
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace DocManager.Api.Controllers.v1
         [HttpPut("{id}/user/{userId}")]
         public async Task<IActionResult> AssignUserPermissions(long id, long userId)
         {
-            var result = await Mediator.Send(new AssignUserPermissionCommand { DocumentId = id, UserId = userId });
+            var result = await Mediator.Send(new AssignUserPermission { DocumentId = id, UserId = userId });
             if (!result.Succeeded)
                 return NotFound(result);
             return Ok(result);
@@ -123,10 +123,10 @@ namespace DocManager.Api.Controllers.v1
         [HttpPut("{id}/group/{groupId}")]
         public async Task<IActionResult> AssignGroupPermissions(long id, long groupId)
         {
-            var result = await Mediator.Send(new AssignGroupPermissionCommand { DocumentId = id, GroupId = groupId });
+            var result = await Mediator.Send(new AssignGroupPermission { DocumentId = id, GroupId = groupId });
             if (!result.Succeeded)
                 return NotFound(result);
-            return Ok();
+            return Ok(result);
         }
 
     }

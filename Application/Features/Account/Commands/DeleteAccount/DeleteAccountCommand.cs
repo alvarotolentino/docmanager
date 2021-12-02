@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Common;
@@ -8,23 +9,24 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Application.Features.Account.Commands.DeleteAccount
 {
-    public class DeleteAccountCommand : IRequest<Response<bool>>
+    public class DeleteAccount : IRequest<Response<bool>>
     {
         public long id { get; set; }
     }
 
-    public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand, Response<bool>>
+    public class DeleteAccountHandler : IRequestHandler<DeleteAccount, Response<bool>>
     {
 
         IAccountRepositoryAsync accountRepository;
-        public DeleteAccountCommandHandler(IAccountRepositoryAsync accountRepository)
+        public DeleteAccountHandler(IAccountRepositoryAsync accountRepository)
         {
             this.accountRepository = accountRepository;
         }
-        public async Task<Response<bool>> Handle(DeleteAccountCommand command, CancellationToken cancellationToken)
+        public async Task<Response<bool>> Handle(DeleteAccount request, CancellationToken cancellationToken)
         {
-            var result = await this.accountRepository.DeleteAccountById(command.id, cancellationToken);
-            return new Response<bool>(result);
+            var result = await this.accountRepository.DeleteAsync(new User { Id = request.id }, cancellationToken);
+            if (result != IdentityResult.Success) return new Response<bool>(false, message: result.Errors.FirstOrDefault().Description, succeeded: false);
+            return new Response<bool>(true, message: $"User with Id {request.id} deleted successfully.");
 
         }
     }

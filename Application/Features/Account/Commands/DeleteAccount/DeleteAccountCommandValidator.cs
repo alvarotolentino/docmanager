@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Application.Features.Account.Commands.DeleteAccount
 {
-    public class DeleteAccountCommandValidator : AbstractValidator<DeleteAccountCommand>
+    public class DeleteAccountValidator : AbstractValidator<DeleteAccount>
     {
-        public DeleteAccountCommandValidator()
+        public DeleteAccountValidator()
         {
             RuleFor(p => p.id)
             .NotEmpty().WithMessage("{PropertyName} is required.")

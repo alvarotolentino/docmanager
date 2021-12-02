@@ -2,11 +2,11 @@ using FluentValidation;
 
 namespace Application.Features.Groups.Commands.DeleteGroup
 {
-    public class DeleteGroupCommandValidator : AbstractValidator<DeleteGroupCommand>
+    public class DeleteGroupValidator : AbstractValidator<DeleteGroup>
     {
-        public DeleteGroupCommandValidator()
+        public DeleteGroupValidator()
         {
-            RuleFor(p => p.id)
+            RuleFor(p => p.Id)
             .NotEmpty().WithMessage("{PropertyName} is required.")
             .NotNull()
             .GreaterThan(0);

@@ -38,27 +38,40 @@ namespace DocManager.Api.Middleware
 
         private void attachUserToContext(HttpContext context, string token)
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            tokenHandler.ValidateToken(token, new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero,
-                ValidIssuer = this.jwtSettings.Issuer,
-                ValidAudience = this.jwtSettings.Audience,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(this.jwtSettings.Key))
-            }, out SecurityToken validatedToken);
-            var jwtToken = (JwtSecurityToken)validatedToken;
 
-            context.Items["User"] = new User
+            try
             {
-                Id = long.Parse(jwtToken.Claims.First(x => x.Type == "uid").Value),
-                Email = jwtToken.Claims.First(x => x.Type == "email").Value,
+                var tokenHandler = new JwtSecurityTokenHandler();
+                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero,
+                    ValidIssuer = this.jwtSettings.Issuer,
+                    ValidAudience = this.jwtSettings.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(this.jwtSettings.Key))
+                }, out SecurityToken validatedToken);
+                var jwtToken = (JwtSecurityToken)validatedToken;
 
-            };
-            context.Items["Roles"] = jwtToken.Claims.Where(x => x.Type == "roles").Select(x => x.Value);
+                context.Items["User"] = new User
+                {
+                    Id = long.Parse(jwtToken.Claims.First(x => x.Type == "uid").Value),
+                    Email = jwtToken.Claims.First(x => x.Type == "email").Value,
+
+                };
+                context.Items["Roles"] = jwtToken.Claims.Where(x => x.Type == "roles").Select(x => x.Value);
+            }
+            catch (Microsoft.IdentityModel.Tokens.SecurityTokenExpiredException)
+            {
+                throw new SecurityTokenExpiredException("The token is expired");
+            }
+            catch (Exception exception)
+            {
+                throw exception;
+            }
+
         }
 
     }

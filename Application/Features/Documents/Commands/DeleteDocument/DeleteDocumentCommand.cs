@@ -9,24 +9,24 @@ using MediatR;
 
 namespace Application.Features.Documents.Commands.DeleteDocument
 {
-    public class DeleteDocumentByIdCommand : IRequest<Response<long>>
+    public class DeleteDocumentById : IRequest<Response<DeleteDocumentViewModel>>
     {
         public long Id { get; set; }
     }
 
-    public class DeleteDocumentCommandHandler : IRequestHandler<DeleteDocumentByIdCommand, Response<long>>
+    public class DeleteDocumentHandler : IRequestHandler<DeleteDocumentById, Response<DeleteDocumentViewModel>>
     {
         private const string ERRORTITLE = "Document Error";
         private readonly IDocumentRepositoryAsync documentRepositoryAsync;
-        public DeleteDocumentCommandHandler(IDocumentRepositoryAsync documentRepositoryAsync)
+        public DeleteDocumentHandler(IDocumentRepositoryAsync documentRepositoryAsync)
         {
             this.documentRepositoryAsync = documentRepositoryAsync;
         }
-        public async Task<Response<long>> Handle(DeleteDocumentByIdCommand command, CancellationToken cancellationToken)
+        public async Task<Response<DeleteDocumentViewModel>> Handle(DeleteDocumentById request, CancellationToken cancellationToken)
         {
-            var result = await this.documentRepositoryAsync.DeleteDocumentById(command.Id, cancellationToken);
-            return new Response<long>(result ? command.Id : 0);
-
+            var result = await this.documentRepositoryAsync.DeleteDocumentById(request.Id, cancellationToken);
+            var deleteDocumentViewModel = result ? new DeleteDocumentViewModel() { Id = request.Id } : null;
+            return new Response<DeleteDocumentViewModel>(deleteDocumentViewModel, message: result ? null : "Document not found");
 
         }
     }

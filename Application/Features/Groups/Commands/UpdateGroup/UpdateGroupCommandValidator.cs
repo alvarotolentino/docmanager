@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Application.Features.Groups.Commands.UpdateGroup
 {
-    public class UpdateGroupCommandValidator : AbstractValidator<UpdateGroupCommand>
+    public class UpdateGroupValidator : AbstractValidator<UpdateGroup>
     {
-        public UpdateGroupCommandValidator()
+        public UpdateGroupValidator()
         {
             RuleFor(p => p.id)
             .NotEmpty().WithMessage("{PropertyName} is required.")

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Exceptions;
+using Application.Features.Account.Queries.GetAccounts;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Domain.Entities;
@@ -54,18 +55,6 @@ namespace Infrastructure.Persistence.Repositories
             return user;
         }
 
-        public async Task<bool> DeleteAccountById(long id, CancellationToken cancellationToken)
-        {
-            using (var cmd = new NpgsqlCommand("CALL \"usp_delete_account\" (@p_id)", connection))
-            {
-                connection.Open();
-                cmd.Parameters.AddWithValue("@p_id", id);
-                var affected = await cmd.ExecuteNonQueryAsync(cancellationToken);
-                connection.Close();
-                return true;
-            }
-        }
-
         public async Task<User> AssignRole(long userId, long roleId, CancellationToken cancellationToken)
         {
             var user = new User() { Roles = new List<Role>() };
@@ -99,7 +88,6 @@ namespace Infrastructure.Persistence.Repositories
                 connection.Open();
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.Add(new NpgsqlParameter("p_id", DbType.Int64) { Direction = ParameterDirection.Output });
-                cmd.Parameters.Add(new NpgsqlParameter("p_user_exists", DbType.Boolean) { Direction = ParameterDirection.Output });
                 cmd.Parameters.AddWithValue("p_first_name", user.FirstName);
                 cmd.Parameters.AddWithValue("p_last_name", user.LastName);
                 cmd.Parameters.AddWithValue("p_user_name", user.UserName);
@@ -112,10 +100,9 @@ namespace Infrastructure.Persistence.Repositories
 
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 connection.Close();
-                var alreadyExists = (bool)cmd.Parameters["p_user_exists"].Value;
-                var id = (long)cmd.Parameters["p_id"].Value;
+                user.Id = (long)cmd.Parameters["p_id"].Value;
 
-                return alreadyExists ? IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Email '{user.Email}' is already registered." } }) : IdentityResult.Success;
+                return user.Id > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Email '{user.Email}' already exists." } });
             }
         }
 
@@ -175,55 +162,98 @@ namespace Infrastructure.Persistence.Repositories
 
         public void Dispose()
         {
-            if (this.connection.State == ConnectionState.Open)
+            if (this.connection != null && this.connection.State == ConnectionState.Open)
             {
                 this.connection.Close();
             }
         }
 
-        public Task<IdentityResult> DeleteAsync(User user, CancellationToken cancellationToken)
+        public async Task<IdentityResult> DeleteAsync(User user, CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            using (var cmd = new NpgsqlCommand("CALL \"usp_delete_account\" (@p_id)", connection))
+            {
+                connection.Open();
+                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int64) { Value = user.Id, Direction = ParameterDirection.InputOutput });
+                await cmd.ExecuteNonQueryAsync(cancellationToken);
+                var result = (long)cmd.Parameters["@p_id"].Value;
+                connection.Close();
+                return result > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"User not found." } });
+            }
         }
 
+        public async Task<IReadOnlyList<User>> GetAccounts(GetAllAccountsParameter filter, CancellationToken cancellationToken)
+        {
+            List<User> users = null;
+            using (var cmd = new NpgsqlCommand("udf_get_accounts_by_page_number_size", connection))
+            {
+                connection.Open();
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("p_number", filter.pagenumber);
+                cmd.Parameters.AddWithValue("p_size", filter.pagesize);
+                cmd.Prepare();
+
+                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
+                {
+                    users = new List<User>();
+                    if (reader.HasRows)
+                    {
+                        while (reader.Read())
+                        {
+                            var user = new User
+                            {
+                                Id = (long)reader["id"],
+                                Email = reader["email"].ToString()
+                            };
+                            users.Add(user);
+                        }
+                    }
+                }
+
+                connection.Close();
+            }
+            return users;
+        }
         public Task<User> FindByIdAsync(string userId, CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            return null;
         }
 
         public Task<User> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            return null;
         }
 
         public Task<string> GetNormalizedUserNameAsync(User user, CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            return Task.FromResult(user.NormalizedUserName ?? user.UserName.ToUpper());
         }
 
         public Task<string> GetUserIdAsync(User user, CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            return Task.FromResult(user.Id.ToString());
         }
 
         public Task<string> GetUserNameAsync(User user, CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            return Task.FromResult(user.UserName);
         }
 
         public Task SetNormalizedUserNameAsync(User user, string normalizedName, CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            user.NormalizedUserName = user.UserName.ToUpper();
+            return Task.FromResult(0);
         }
 
         public Task SetUserNameAsync(User user, string userName, CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            user.UserName = user.NormalizedUserName.ToLower();
+            return Task.FromResult(0);
         }
 
         public Task<IdentityResult> UpdateAsync(User user, CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            return null;
         }
+
     }
 }

@@ -26,7 +26,7 @@ namespace DocManager.Api.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> LogIn(AuthenticationRequest request)
         {
-            var response = await Mediator.Send(new AuthenticateUserCommand
+            var response = await Mediator.Send(new AuthenticateUser
             {
                 email = request.Email,
                 password = request.Password,

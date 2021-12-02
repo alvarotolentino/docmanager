@@ -5,6 +5,7 @@ using Application.Enums;
 using Application.Features.Account.Commands.AddUserGroup;
 using Application.Features.Account.Commands.AddUserRole;
 using Application.Features.Account.Commands.RegisterAccount;
+using Application.Features.Account.Queries.GetAccounts;
 using Application.Interfaces;
 using DocManager.Api.Attributes;
 using Microsoft.AspNetCore.Http;
@@ -21,18 +22,18 @@ namespace DocManager.Api.Controllers
         /// <summary>
         /// Register a new user account.
         /// </summary>
-        /// <param name="command"></param>
+        /// <param name="request"></param>
         /// <returns>The newly created User Id</returns>
         [HttpPost]
-        public async Task<IActionResult> CreateAccount([FromBody] RegisterAccountCommand command)
+        public async Task<IActionResult> CreateAccount([FromBody] RegisterAccount request)
         {
-            var response = await Mediator.Send(command);
+            var response = await Mediator.Send(request);
             if (response.Succeeded)
                 return StatusCode(StatusCodes.Status201Created, response);
 
             // TODO: Validate 400 error or Validation Exception 
             return Ok(response);
-            
+
         }
 
         /// <summary>
@@ -45,7 +46,7 @@ namespace DocManager.Api.Controllers
         [HttpPost("{userId}/group/{groupId}")]
         public async Task<IActionResult> AddGroup([FromRoute] long userid, [FromRoute] long groupid)
         {
-            return Ok(await Mediator.Send(new AddUserGroupCommand { userid = userid, groupid = groupid }));
+            return Ok(await Mediator.Send(new AddUserGroup { userid = userid, groupid = groupid }));
         }
 
         /// <summary>
@@ -57,7 +58,19 @@ namespace DocManager.Api.Controllers
         [HttpPost("{userId}/role/{roleid}")]
         public async Task<IActionResult> AddRole([FromRoute] long userid, [FromRoute] long roleid)
         {
-            return Ok(await Mediator.Send(new AddUserRoleCommand { userid = userid, roleid = roleid }));
+            return Ok(await Mediator.Send(new AddUserRole { userid = userid, roleid = roleid }));
+        }
+
+
+        /// <summary>
+        /// Get all accoutns paginated
+        /// </summary>
+        /// <param name="pagination">Page size and page number</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> GetAccounts([FromQuery] GetAllAccountsParameter pagination)
+        {
+            return Ok(await Mediator.Send(new GetAllAccountsQuery { PageSize = pagination.pagesize, PageNumber = pagination.pagenumber }));
         }
 
 

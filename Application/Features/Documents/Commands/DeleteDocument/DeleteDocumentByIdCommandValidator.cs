@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Application.Features.Documents.Commands.DeleteDocument
 {
-    public class DeleteDocumentByIdCommandValidator : AbstractValidator<DeleteDocumentByIdCommand>
+    public class DeleteDocumentByIdValidator : AbstractValidator<DeleteDocumentById>
     {
-        public DeleteDocumentByIdCommandValidator()
+        public DeleteDocumentByIdValidator()
         {
             var validation = Resources.Reader.GetMessages()["Validation"];
 

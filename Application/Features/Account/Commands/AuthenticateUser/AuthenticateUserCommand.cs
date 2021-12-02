@@ -20,7 +20,7 @@ using Application.Interfaces.Repositories;
 
 namespace Application.Features.Account.Commands.AuthenticateUser
 {
-    public class AuthenticateUserCommand : IRequest<Response<AuthenticationUserViewModel>>
+    public class AuthenticateUser : IRequest<Response<AuthenticationUserViewModel>>
     {
         public string email { get; set; }
         public string password { get; set; }
@@ -28,7 +28,7 @@ namespace Application.Features.Account.Commands.AuthenticateUser
 
     }
 
-    public class AuthenticateUserCommandHandler : IRequestHandler<AuthenticateUserCommand, Response<AuthenticationUserViewModel>>
+    public class AuthenticateUserHandler : IRequestHandler<AuthenticateUser, Response<AuthenticationUserViewModel>>
     {
 
         private const string ERRORTITLE = "Account Error";
@@ -37,7 +37,7 @@ namespace Application.Features.Account.Commands.AuthenticateUser
         private readonly JWTokenSettings jwtSettings;
         private readonly IPasswordHasher<User> passwordHasher;
 
-        public AuthenticateUserCommandHandler(
+        public AuthenticateUserHandler(
             IAccountRepositoryAsync accountRepository,
             IPasswordHasher<User> passwordHasher,
             IOptions<JWTokenSettings> jwtSettings)
@@ -47,24 +47,24 @@ namespace Application.Features.Account.Commands.AuthenticateUser
             this.passwordHasher = passwordHasher;
 
         }
-        public async Task<Response<AuthenticationUserViewModel>> Handle(AuthenticateUserCommand command, CancellationToken cancellationToken)
+        public async Task<Response<AuthenticationUserViewModel>> Handle(AuthenticateUser request, CancellationToken cancellationToken)
         {
-            var user = await this.accountRepository.FindByEmailAsync(command.email, cancellationToken);
+            var user = await this.accountRepository.FindByEmailAsync(request.email, cancellationToken);
             if (user == null)
             {
-                throw new ApiException(ERRORTITLE, $"No Accounts Registered with {command.email}.");
+                throw new ApiException(ERRORTITLE, $"No Accounts Registered with {request.email}.");
             }
 
-            var result = this.passwordHasher.VerifyHashedPassword(user, user.PasswordHash, command.password);
+            var result = this.passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.password);
             if (result != PasswordVerificationResult.Success)
             {
-                throw new ApiException(ERRORTITLE, $"Invalid Credentials for '{command.email}'.");
+                throw new ApiException(ERRORTITLE, $"Invalid Credentials for '{request.email}'.");
             }
 
-            JwtSecurityToken jwtSecurityToken = GetJWToken(user, command.ipaddress);
+            JwtSecurityToken jwtSecurityToken = GetJWToken(user, request.ipaddress);
             AuthenticationUserViewModel response = new AuthenticationUserViewModel();
             response.JWToken = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
-            var refreshToken = GetRefreshToken(command.ipaddress);
+            var refreshToken = GetRefreshToken(request.ipaddress);
             response.RefreshToken = refreshToken.Token;
             return new Response<AuthenticationUserViewModel>(response, $"Authenticated {user.UserName}");
 

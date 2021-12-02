@@ -31,10 +31,11 @@ namespace Infrastructure.Persistence.Repositories
             using (var cmd = new NpgsqlCommand("CALL \"usp_delete_document\" (@p_id)", connection))
             {
                 connection.Open();
-                cmd.Parameters.AddWithValue("@p_id", id);
-                var affected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int64) { Value = id, Direction = ParameterDirection.InputOutput });
+                await cmd.ExecuteNonQueryAsync(cancellationToken);
+                var result = (long)cmd.Parameters["@p_id"].Value;
                 connection.Close();
-                return true;
+                return result > -1;
             }
         }
 
@@ -208,7 +209,7 @@ namespace Infrastructure.Persistence.Repositories
                     if (reader.HasRows)
                     {
                         reader.Read();
-                        groupDocument.GroupName = reader["user_name"].ToString();
+                        groupDocument.GroupName = reader["group_name"].ToString();
                         groupDocument.DocumentName = reader["document_name"].ToString();
                         return groupDocument;
                     }

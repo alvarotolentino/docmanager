@@ -3,9 +3,9 @@ using FluentValidation.Validators;
 
 namespace Application.Features.Account.Commands.AuthenticateUser
 {
-    public class AuthenticateUserCommandValidator : AbstractValidator<AuthenticateUserCommand>
+    public class AuthenticateUserValidator : AbstractValidator<AuthenticateUser>
     {
-        public AuthenticateUserCommandValidator()
+        public AuthenticateUserValidator()
         {
             RuleFor(p => p.email)
             .NotEmpty().WithMessage("{PropertyName} is required.")

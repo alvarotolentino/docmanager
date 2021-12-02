@@ -18,25 +18,25 @@ namespace DocManager.Api.Controllers.v1
         /// <summary>
         /// Creates a new group
         /// </summary>
-        /// <param name="command"></param>
+        /// <param name="request"></param>
         /// <returns>The newly created group id</returns>  
         [HttpPost]
-        public async Task<IActionResult> CreateGroup([FromBody] RegisterGroupCommand command)
+        public async Task<IActionResult> CreateGroup([FromBody] RegisterGroup request)
         {
-            return Ok(await Mediator.Send(command));
+            return Ok(await Mediator.Send(request));
         }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="command"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateGroup(long id, UpdateGroupCommand command)
+        public async Task<IActionResult> UpdateGroup(long id, UpdateGroup request)
         {
-            command.id = id;
-            return Ok(await Mediator.Send(command));
+            request.id = id;
+            return Ok(await Mediator.Send(request));
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace DocManager.Api.Controllers.v1
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteGroup(long id)
         {
-            return Ok(await Mediator.Send(new DeleteGroupCommand { id = id }));
+            return Ok(await Mediator.Send(new DeleteGroup { Id = id }));
         }
 
         /// <summary>

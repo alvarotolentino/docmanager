@@ -8,25 +8,25 @@ using MediatR;
 
 namespace Application.Features.Account.Commands.AddUserGroup
 {
-    public class AddUserGroupCommand : IRequest<Response<AddUserGroupViewModel>>
+    public class AddUserGroup : IRequest<Response<AddUserGroupViewModel>>
     {
         public long userid { get; set; }
         public long groupid { get; set; }
     }
 
-    public class AddUserGroupCommandHandler : IRequestHandler<AddUserGroupCommand, Response<AddUserGroupViewModel>>
+    public class AddUserGroupHandler : IRequestHandler<AddUserGroup, Response<AddUserGroupViewModel>>
     {
 
         private readonly IAccountRepositoryAsync accountRepository;
         private readonly IMapper mapper;
-        public AddUserGroupCommandHandler(IAccountRepositoryAsync accountRepository, IMapper mapper)
+        public AddUserGroupHandler(IAccountRepositoryAsync accountRepository, IMapper mapper)
         {
             this.accountRepository = accountRepository;
             this.mapper = mapper;
         }
-        public async Task<Response<AddUserGroupViewModel>> Handle(AddUserGroupCommand command, CancellationToken cancellationToken)
+        public async Task<Response<AddUserGroupViewModel>> Handle(AddUserGroup request, CancellationToken cancellationToken)
         {
-            var userGroup = this.mapper.Map<UserGroup>(command);
+            var userGroup = this.mapper.Map<UserGroup>(request);
             var result = await this.accountRepository.AddUserToGroup(userGroup, cancellationToken);
             var addUserGroupViewModel = this.mapper.Map<AddUserGroupViewModel>(result);
             return new Response<AddUserGroupViewModel>(addUserGroupViewModel);

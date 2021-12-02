@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Application.Features.Documents.Commands.CreateDocument
 {
-    public class CreateDocumentCommandValidator : AbstractValidator<CreateDocumentCommand>
+    public class CreateDocumentValidator : AbstractValidator<CreateDocument>
     {
-        public CreateDocumentCommandValidator()
+        public CreateDocumentValidator()
         {
 
             var validation = Resources.Reader.GetMessages()["Validation"];

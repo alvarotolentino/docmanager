@@ -7,24 +7,25 @@ using MediatR;
 
 namespace Application.Features.Groups.Commands.DeleteGroup
 {
-    public class DeleteGroupCommand : IRequest<Response<bool>>
+    public class DeleteGroup : IRequest<Response<DeleteGroupViewModel>>
     {
-        public long id { get; set; }
+        public long Id { get; set; }
     }
 
-    public class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupCommand, Response<bool>>
+    public class DeleteGroupHandler : IRequestHandler<DeleteGroup, Response<DeleteGroupViewModel>>
     {
         private readonly IGroupRepositoryAsync groupRepositoryAsync;
 
-        public DeleteGroupCommandHandler(IGroupRepositoryAsync groupRepository)
+        public DeleteGroupHandler(IGroupRepositoryAsync groupRepository)
         {
             this.groupRepositoryAsync = groupRepository;
 
         }
-        public async Task<Response<bool>> Handle(DeleteGroupCommand command, CancellationToken cancellationToken)
+        public async Task<Response<DeleteGroupViewModel>> Handle(DeleteGroup request, CancellationToken cancellationToken)
         {
-            var result = await this.groupRepositoryAsync.DeleteGroup(command.id, cancellationToken);
-            return new Response<bool>(data: result, message: result ? "Group and all users associated with were deleted successfully." : "Group was not found or deleted.");
+            var result = await this.groupRepositoryAsync.DeleteGroup(request.Id, cancellationToken);
+            var deleteGroupViewModel = result ? new DeleteGroupViewModel() { Id = request.Id } : null;
+            return new Response<DeleteGroupViewModel>(deleteGroupViewModel, message: result ? null : "Group not found");
         }
     }
 }

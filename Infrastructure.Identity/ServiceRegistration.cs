@@ -26,7 +26,6 @@ namespace Infrastructure.Identity
             services.AddTransient<IUserStore<User>, AccountRepositoryAsync>();
             services.AddTransient<IRoleStore<Role>, RoleRepositoryAsync>();
             services.AddIdentity<User, Role>()
-            // .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
             services.Configure<JWTokenSettings>(configuration.GetSection("JWTokenSettings"));

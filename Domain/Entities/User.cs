@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Identity;
 
@@ -13,6 +14,11 @@ namespace Domain.Entities
         public List<Group> Groups { get; set; }
 
         public List<Role> Roles { get; set; }
+
+        public virtual long CreatedBy { get; set; }
+        public virtual DateTime CreatedAt { get; set; }
+        public virtual long UpdatedBy { get; set; }
+        public virtual DateTime UpdatedAt { get; set; }
 
         public bool OwnsToken(string token)
         {

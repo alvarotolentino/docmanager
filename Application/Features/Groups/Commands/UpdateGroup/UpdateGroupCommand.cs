@@ -9,29 +9,29 @@ using MediatR;
 
 namespace Application.Features.Groups.Commands.UpdateGroup
 {
-    public class UpdateGroupCommand : IRequest<Response<UpdateGroupViewModel>>
+    public class UpdateGroup : IRequest<Response<UpdateGroupViewModel>>
     {
         public long id { get; set; }
         public string name { get; set; }
     }
 
-    public class UpdateGroupCommandHandler : IRequestHandler<UpdateGroupCommand, Response<UpdateGroupViewModel>>
+    public class UpdateGroupHandler : IRequestHandler<UpdateGroup, Response<UpdateGroupViewModel>>
     {
         private const string ERRORTITLE = "Group Error";
 
         private readonly IGroupRepositoryAsync groupRepositoryAsync;
         private readonly IMapper mapper;
-        public UpdateGroupCommandHandler(IGroupRepositoryAsync groupRepository, IMapper mapper)
+        public UpdateGroupHandler(IGroupRepositoryAsync groupRepository, IMapper mapper)
         {
             this.groupRepositoryAsync = groupRepository;
             this.mapper = mapper;
         }
-        public async Task<Response<UpdateGroupViewModel>> Handle(UpdateGroupCommand command, CancellationToken cancellationToken)
+        public async Task<Response<UpdateGroupViewModel>> Handle(UpdateGroup request, CancellationToken cancellationToken)
         {
-            var request = this.mapper.Map<Group>(command);
-            var group = await this.groupRepositoryAsync.Update(request, cancellationToken);
-            if (group == null) throw new NotFoundException(ERRORTITLE);
-            var groupViewModel = this.mapper.Map<UpdateGroupViewModel>(group);
+            var group = this.mapper.Map<Group>(request);
+            var groupUpdated = await this.groupRepositoryAsync.Update(group, cancellationToken);
+            if (groupUpdated == null) return new Response<UpdateGroupViewModel>(null, message: "Group not found", succeeded: false);
+            var groupViewModel = this.mapper.Map<UpdateGroupViewModel>(groupUpdated);
             return new Response<UpdateGroupViewModel>(data: groupViewModel);
         }
     }

@@ -28,7 +28,6 @@ namespace Infrastructure.Persistence
             services.AddTransient<IDocumentRepositoryAsync, DocumentRepositoryAsync>();
             services.AddTransient<IAccountRepositoryAsync, AccountRepositoryAsync>();
             services.AddTransient<IGroupRepositoryAsync, GroupRepositoryAsync>();
-            services.AddTransient<IRoleRepositoryAsync, RoleRepositoryAsync>();
 
         }
     }

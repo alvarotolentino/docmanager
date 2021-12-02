@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Common;
@@ -11,7 +12,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Application.Features.Account.Commands.RegisterAccount
 {
-    public class RegisterAccountCommand : IRequest<Response<long>>
+    public class RegisterAccount : IRequest<Response<RegisterAccountViewModel>>
     {
         public string FirstName { get; set; }
 
@@ -25,15 +26,15 @@ namespace Application.Features.Account.Commands.RegisterAccount
         public string ConfirmPassword { get; set; }
     }
 
-    public class RegisterAccountCommandHandler : IRequestHandler<RegisterAccountCommand, Response<long>>
+    public class RegisterAccountHandler : IRequestHandler<RegisterAccount, Response<RegisterAccountViewModel>>
     {
         private const string ERRORTITLE = "Account Error";
 
         private readonly IEmailService emailService;
         private readonly IAccountRepositoryAsync accountRepository;
-        IPasswordHasher<User> passwordHasher;
+        private readonly IPasswordHasher<User> passwordHasher;
 
-        public RegisterAccountCommandHandler(
+        public RegisterAccountHandler(
             IAccountRepositoryAsync accountRepository,
             IPasswordHasher<User> passwordHasher,
             IEmailService emailService)
@@ -42,17 +43,17 @@ namespace Application.Features.Account.Commands.RegisterAccount
             this.emailService = emailService;
             this.passwordHasher = passwordHasher;
         }
-        public async Task<Response<long>> Handle(RegisterAccountCommand command, CancellationToken cancellationToken)
+        public async Task<Response<RegisterAccountViewModel>> Handle(RegisterAccount request, CancellationToken cancellationToken)
         {
             var user = new User()
             {
-                FirstName = command.FirstName,
-                LastName = command.LastName,
-                UserName = command.UserName,
-                Email = command.Email
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                UserName = request.UserName,
+                Email = request.Email
             };
 
-            user.PasswordHash = passwordHasher.HashPassword(user, command.Password);
+            user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
             var result = await this.accountRepository.CreateAsync(user, cancellationToken);
             if (result.Succeeded)
             {
@@ -64,12 +65,11 @@ namespace Application.Features.Account.Commands.RegisterAccount
                         Body = $"Your account was create in DocManager App",
                         Subject = "Confirm Registration"
                     });
-                return new Response<long>(user.Id, message: $"User Registered");
+                return new Response<RegisterAccountViewModel>(new RegisterAccountViewModel { Id = user.Id, Email = user.Email }, message: $"User Registered");
             }
             else
             {
-                var errors = Utf8Json.JsonSerializer.ToJsonString(result.Errors);
-                throw new ApiException(ERRORTITLE, $"{errors}");
+                throw new ApiException(ERRORTITLE, result.Errors.FirstOrDefault().Description);
             }
         }
     }

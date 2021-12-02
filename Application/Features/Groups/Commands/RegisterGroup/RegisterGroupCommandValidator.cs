@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Application.Features.Groups.Commands.RegisterGroup
 {
-    public class RegisterGroupCommandValidator : AbstractValidator<RegisterGroupCommand>
+    public class RegisterGroupValidator : AbstractValidator<RegisterGroup>
     {
-        public RegisterGroupCommandValidator()
+        public RegisterGroupValidator()
         {
             RuleFor(p => p.name)
             .NotEmpty().WithMessage("{PropertyName} is required.")

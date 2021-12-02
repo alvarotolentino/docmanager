@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Application.Features.Account.Commands.AddUserGroup
 {
-    public class AddUserGroupCommandValidator : AbstractValidator<AddUserGroupCommand>
+    public class AddUserGroupValidator : AbstractValidator<AddUserGroup>
     {
-        public AddUserGroupCommandValidator()
+        public AddUserGroupValidator()
         {
             RuleFor(p => p.userid)
             .NotEmpty().WithMessage("{PropertyName} is required.")

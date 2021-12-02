@@ -2,7 +2,9 @@ using System;
 using System.IO;
 using System.Linq;
 using Application.Features.Account.Commands.AddUserGroup;
+using Application.Features.Account.Commands.AddUserRole;
 using Application.Features.Account.Commands.RegisterAccount;
+using Application.Features.Account.Queries.GetAccounts;
 using Application.Features.Documents.Commands.AssignGroupPermission;
 using Application.Features.Documents.Commands.AssignUserPermission;
 using Application.Features.Documents.Commands.CreateDocument;
@@ -22,7 +24,7 @@ namespace Application.Mappings
     {
         public DocManagerProfile()
         {
-            CreateMap<CreateDocumentCommand, Documents>()
+            CreateMap<CreateDocument, Documents>()
             .ForMember(dto => dto.ContentType, opts => opts.MapFrom(s => s.file.ContentType))
             .ForMember(dto => dto.Length, opts => opts.MapFrom(s => s.file.Length))
             .ForMember(dto => dto.Name, opts => opts.MapFrom(s => s.file.FileName))
@@ -57,14 +59,14 @@ namespace Application.Mappings
                 destination.Length = FormatSize(source.Length);
             });
 
-            CreateMap<RegisterGroupCommand, Group>()
+            CreateMap<RegisterGroup, Group>()
             .ForMember(dto => dto.Id, opts => opts.Ignore())
             .ForMember(dto => dto.UserGroups, opts => opts.Ignore());
 
-            CreateMap<UpdateGroupCommand, Group>()
+            CreateMap<UpdateGroup, Group>()
             .ForMember(dto => dto.UserGroups, opts => opts.Ignore());
 
-            CreateMap<AddUserGroupCommand, UserGroup>()
+            CreateMap<AddUserGroup, UserGroup>()
             .ForMember(dto => dto.User, opts => opts.Ignore())
             .ForMember(dto => dto.Group, opts => opts.Ignore());
 
@@ -87,11 +89,20 @@ namespace Application.Mappings
                 destination.GroupName = string.Join(",", names);
             });
 
-            CreateMap<AssignUserPermissionCommand, UserDocument>();
+            CreateMap<AssignUserPermission, UserDocument>();
             CreateMap<UserDocument, AssignUserPermissionViewModel>();
-            CreateMap<AssignGroupPermissionCommand, GroupDocument>();
+            CreateMap<AssignGroupPermission, GroupDocument>();
             CreateMap<GroupDocument, AssignGroupPermissionViewModel>();
-            
+
+            CreateMap<User, AddUserRoleViewModel>()
+            .ForMember(dto => dto.UserId, opts => opts.MapFrom(s => s.Id))
+            .ForMember(dto => dto.UserName, opts => opts.MapFrom(s => s.UserName))
+            .ForMember(dto => dto.RoleId, opts => opts.MapFrom(s => s.Roles.FirstOrDefault().Id))
+            .ForMember(dto => dto.RoleName, opts => opts.MapFrom(s => s.Roles.FirstOrDefault().Name));
+
+            CreateMap<GetAllAccountsQuery, GetAllAccountsParameter>();
+
+            CreateMap<User, GetAllAccountsViewModel>();
         }
 
         private static string FormatSize(long size)

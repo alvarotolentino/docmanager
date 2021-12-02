@@ -2,29 +2,34 @@ using System.Threading;
 using System.Threading.Tasks;
 using Application.Common;
 using Application.Interfaces.Repositories;
+using AutoMapper;
 using Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
 namespace Application.Features.Account.Commands.AddUserRole
 {
-    public class AddUserRoleCommand : IRequest<Response<bool>>
+    public class AddUserRole : IRequest<Response<AddUserRoleViewModel>>
     {
         public long userid { get; set; }
         public long roleid { get; set; }
     }
 
-    public class AddUserRoleCommandHandler : IRequestHandler<AddUserRoleCommand, Response<bool>>
+    public class AddUserRoleHandler : IRequestHandler<AddUserRole, Response<AddUserRoleViewModel>>
     {
-        IAccountRepositoryAsync accountRepository;
-        public AddUserRoleCommandHandler(IAccountRepositoryAsync accountRepository)
+        private readonly IAccountRepositoryAsync accountRepository;
+        private readonly IMapper mapper;
+        public AddUserRoleHandler(IAccountRepositoryAsync accountRepository, IMapper mapper)
         {
             this.accountRepository = accountRepository;
+            this.mapper = mapper;
         }
-        public async Task<Response<bool>> Handle(AddUserRoleCommand command, CancellationToken cancellationToken)
+        public async Task<Response<AddUserRoleViewModel>> Handle(AddUserRole request, CancellationToken cancellationToken)
         {
-            var result = await this.accountRepository.AssignRole(command.userid, command.roleid, cancellationToken);
-            return new Response<bool>(result != null, message: "Role assigned");
+            var result = await this.accountRepository.AssignRole(request.userid, request.roleid, cancellationToken);
+            if (result == null) return new Response<AddUserRoleViewModel>(null, message: "User or Role not found.", succeeded: false);
+            var addUserRoleViewModel = this.mapper.Map<AddUserRoleViewModel>(result);
+            return new Response<AddUserRoleViewModel>(addUserRoleViewModel, message: "Role assigned");
         }
     }
 }

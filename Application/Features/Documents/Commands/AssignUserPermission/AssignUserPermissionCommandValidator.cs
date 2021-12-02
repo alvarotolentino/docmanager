@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Application.Features.Documents.Commands.AssignUserPermission
 {
-    public class AssignUserPermissionCommandValidator: AbstractValidator<AssignUserPermissionCommand>
+    public class AssignUserPermissionValidator: AbstractValidator<AssignUserPermission>
     {
-        public AssignUserPermissionCommandValidator()
+        public AssignUserPermissionValidator()
         {
             RuleFor(p => p.UserId)
             .NotEmpty().WithMessage("{PropertyName} is required.")

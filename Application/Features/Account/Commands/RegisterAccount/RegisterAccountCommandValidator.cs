@@ -3,9 +3,9 @@ using FluentValidation.Validators;
 
 namespace Application.Features.Account.Commands.RegisterAccount
 {
-    public class RegisterAccountCommandValidator : AbstractValidator<RegisterAccountCommand>
+    public class RegisterAccountValidator : AbstractValidator<RegisterAccount>
     {
-        public RegisterAccountCommandValidator()
+        public RegisterAccountValidator()
         {
             RuleFor(p => p.FirstName)
             .NotEmpty().WithMessage("{PropertyName} is required.")
