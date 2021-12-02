@@ -39,7 +39,7 @@ namespace Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<Documents> GetDocumentDataById(int id, CancellationToken cancellationToken)
+        public async Task<Document> GetDocumentDataById(int id, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("udf_get_document_data_by_id", connection))
             {
@@ -48,25 +48,25 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("p_id", id);
                 cmd.Parameters.AddWithValue("p_userid", this.authenticatedUserService.UserId);
                 cmd.Prepare();
-                Documents documents = null;
+                Document document = null;
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (reader.HasRows)
                     {
-                        documents = new Documents();
+                        document = new Document();
                         reader.Read();
-                        documents.Name = reader["name"].ToString();
-                        documents.ContentType = reader["content_type"].ToString();
-                        documents.Length = (long)reader["length"];
-                        documents.Data = (byte[])reader["data"];
+                        document.Name = reader["name"].ToString();
+                        document.ContentType = reader["content_type"].ToString();
+                        document.Length = (long)reader["length"];
+                        document.Data = (byte[])reader["data"];
                     }
                 }
                 connection.Close();
-                return documents;
+                return document;
             }
         }
 
-        public async Task<Documents> GetDocumentInfoById(int id, CancellationToken cancellationToken)
+        public async Task<Document> GetDocumentInfoById(int id, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("udf_get_document_info_by_id", connection))
             {
@@ -75,31 +75,31 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("p_id", id);
                 cmd.Parameters.AddWithValue("p_userid", this.authenticatedUserService.UserId);
                 cmd.Prepare();
-                Documents documents = null;
+                Document document = null;
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (reader.HasRows)
                     {
                         reader.Read();
-                        documents = new Documents();
-                        documents.Id = (int)reader["id"];
-                        documents.Name = reader["name"].ToString();
-                        documents.Description = reader["description"].ToString();
-                        documents.Category = reader["category"].ToString();
-                        documents.ContentType = reader["content_type"].ToString();
-                        documents.Length = (long)reader["length"];
-                        documents.CreatedBy = (int)reader["created_by"];
-                        documents.CreatedAt = (DateTime)reader["created_at"];
-                        documents.UpdatedBy = (int)reader["updated_by"];
-                        documents.UpdatedAt = (DateTime)reader["updated_at"];
+                        document = new Document();
+                        document.Id = (int)reader["id"];
+                        document.Name = reader["name"].ToString();
+                        document.Description = reader["description"].ToString();
+                        document.Category = reader["category"].ToString();
+                        document.ContentType = reader["content_type"].ToString();
+                        document.Length = (long)reader["length"];
+                        document.CreatedBy = (int)reader["created_by"];
+                        document.CreatedAt = (DateTime)reader["created_at"];
+                        document.UpdatedBy = (int)reader["updated_by"];
+                        document.UpdatedAt = (DateTime)reader["updated_at"];
                     }
                 }
                 connection.Close();
-                return documents;
+                return document;
             }
         }
 
-        public async Task<IReadOnlyList<Documents>> GetDocuments(int pageNumber, int pageSize, CancellationToken cancellationToken)
+        public async Task<IReadOnlyList<Document>> GetDocuments(int pageNumber, int pageSize, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("udf_get_documents_by_page_number_size", connection))
             {
@@ -110,15 +110,15 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("p_userid", this.authenticatedUserService.UserId);
                 cmd.Prepare();
 
-                List<Documents> documents = null;
+                List<Document> documents = null;
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (reader.HasRows)
                     {
-                        documents = new List<Documents>();
+                        documents = new List<Document>();
                         while (reader.Read())
                         {
-                            var document = new Documents
+                            var document = new Document
                             {
                                 Id = (int)reader["id"],
                                 Name = reader["name"].ToString(),
@@ -141,7 +141,7 @@ namespace Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<int> SaveDocument(Domain.Entities.Documents document, CancellationToken cancellationToken)
+        public async Task<int> SaveDocument(Domain.Entities.Document document, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("CALL \"usp_insert_document\" (@p_id, @p_name, @p_description, @p_dategory, @p_content_type, @p_length, @p_data, @p_created_at, @p_created_by)", connection))
             {

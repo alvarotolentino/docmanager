@@ -3,7 +3,7 @@ begin
 
     raise info 'Starting creating tables';
 
-    create table if not exists "documents" (
+    create table if not exists "document" (
         id integer not null generated always as identity primary key,
         name character varying not null,
         description character varying not null,
@@ -79,7 +79,7 @@ begin
         document_id integer not null,
         user_id integer not null,
         constraint "pk_document_user" primary key (document_id, user_id),
-        constraint "fk_document_user_document_id" foreign key (document_id) references "documents" (id) on delete cascade,
+        constraint "fk_document_user_document_id" foreign key (document_id) references "document" (id) on delete cascade,
         constraint "fk_document_user_user_id" foreign key (user_id) references "user" (id) on delete cascade
     );
 
@@ -87,7 +87,7 @@ begin
         document_id integer not null,
         group_id integer not null,
         constraint "pk_document_group" primary key (document_id, group_id),
-        constraint "fk_document_group_document_id" foreign key (document_id) references "documents" (id) on delete cascade,
+        constraint "fk_document_group_document_id" foreign key (document_id) references "document" (id) on delete cascade,
         constraint "fk_document_group_group_id" foreign key (group_id) references "group" (id) on delete cascade
     );
     raise info 'Finishing creating tables';
@@ -110,11 +110,11 @@ begin
 
     create index if not exists "ix_user_role_role_id" on user_role (role_id);
 
-    create index if not exists "ix_document_document_type" on "documents" (content_type);
+    create index if not exists "ix_document_document_type" on "document" (content_type);
 
-    create index if not exists "ix_document_category" on "documents" (category);
+    create index if not exists "ix_document_category" on "document" (category);
 
-    create index if not exists "ix_document_name" on "documents" (name);
+    create index if not exists "ix_document_name" on "document" (name);
 
     create index if not exists "ix_user_group_group_id" on user_group (group_id);
 
@@ -140,7 +140,7 @@ begin
     AS $BODY$
     BEGIN
         WITH delete_document AS (
-            DELETE FROM "documents" doc 
+            DELETE FROM "document" doc 
             WHERE doc.id = p_id
             RETURNING doc.id
         ) SELECT COALESCE(
@@ -165,13 +165,13 @@ begin
         WITH document_by_user AS (
             SELECT doc.id,
         		doc.name, doc.description, doc.category, doc.content_type, doc.length, doc.created_by, doc.created_at, doc.updated_by, doc.updated_at
-            FROM "documents" doc
+            FROM "document" doc
             INNER JOIN document_user_permission dup ON doc.id = dup.document_id
             WHERE dup.user_id = p_userid
         ), document_by_group AS (
             SELECT doc.id,
         		doc.name, doc.description, doc.category, doc.content_type, doc.length, doc.created_by, doc.created_at, doc.updated_by, doc.updated_at
-            FROM "documents" doc
+            FROM "document" doc
             INNER JOIN document_group_permission dgp ON doc.id = dgp.document_id
             INNER JOIN user_group ug ON dgp.group_id = ug.group_id
             WHERE ug.user_id = p_userid AND doc.id NOT IN (
@@ -199,17 +199,17 @@ begin
         RETURN QUERY
         WITH document_by_user AS (
             SELECT doc.id
-            FROM "documents" doc
+            FROM "document" doc
             INNER JOIN document_user_permission dup ON doc.id = dup.document_id
             WHERE doc.id = p_id AND dup.user_id = p_userid
         ), document_by_group AS (
             SELECT doc.id
-            FROM "documents" doc
+            FROM "document" doc
             INNER JOIN document_group_permission dgp ON doc.id = dgp.document_id
             INNER JOIN user_group ug ON dgp.group_id = ug.group_id
             WHERE doc.id = p_id AND ug.user_id = p_userid
         ) SELECT doc.id, doc.name, doc.description, doc.category, doc.content_type, doc.length, doc.created_by, doc.created_at, doc.updated_by, doc.updated_at
-        FROM "documents" doc
+        FROM "document" doc
         WHERE doc.id = COALESCE((SELECT du.id FROM document_by_user du LIMIT 1), (SELECT dg.id FROM document_by_group dg LIMIT 1));
 
     END
@@ -227,17 +227,17 @@ begin
         RETURN QUERY
         WITH document_by_user AS (
             SELECT doc.id
-            FROM "documents" doc
+            FROM "document" doc
             INNER JOIN document_user_permission dup ON doc.id = dup.document_id
             WHERE doc.id = p_id AND dup.user_id = p_userid
         ), document_by_group AS (
             SELECT doc.id
-            FROM "documents" doc
+            FROM "document" doc
             INNER JOIN document_group_permission dgp ON doc.id = dgp.document_id
             INNER JOIN user_group ug ON dgp.group_id = ug.group_id
             WHERE doc.id = p_id AND ug.user_id = p_userid
         ) SELECT doc.name, doc.content_type, doc.length, doc.data
-        FROM "documents" doc
+        FROM "document" doc
         WHERE doc.id = COALESCE((SELECT id FROM document_by_user LIMIT 1), (SELECT id FROM document_by_group LIMIT 1));
     END
     $BODY$
@@ -350,7 +350,7 @@ begin
     AS $BODY$
     BEGIN
         WITH save_document AS (
-            INSERT INTO "documents" (name,description,category,content_type,length,data,created_by,created_at,updated_by,updated_at) VALUES
+            INSERT INTO "document" (name,description,category,content_type,length,data,created_by,created_at,updated_by,updated_at) VALUES
 		    (p_name,p_description,p_dategory,p_content_type,p_length,p_data,p_created_by,p_created_at,p_created_by,p_created_at) RETURNING "id"
         )
         INSERT INTO document_user_permission (user_id, document_id)
@@ -493,14 +493,14 @@ begin
         SELECT val.user_id, val.document_id
         FROM (VALUES (p_userid, p_documentid)) val (user_id, document_id)
         JOIN "user" u ON val.user_id = u.id
-        JOIN "documents" d ON val.document_id = d.id
+        JOIN "document" d ON val.document_id = d.id
         ON CONFLICT ON CONSTRAINT "pk_document_user" DO NOTHING;
 
         RETURN QUERY
         SELECT u.id AS user_id, du.document_id , u.user_name, d.name as document_name
         FROM "user" u
         INNER JOIN document_user_permission du ON u.id = du.user_id
-        INNER JOIN "documents" d ON du.document_id = d.id
+        INNER JOIN "document" d ON du.document_id = d.id
         WHERE u.id = p_userid AND d.id = p_documentid;
 
     END
@@ -517,7 +517,7 @@ begin
         INSERT INTO document_group_permission (document_id, group_id) 
         SELECT val.document_id, val.group_id
 		FROM (VALUES (p_documentid, p_groupid)) val (document_id, group_id)
-		JOIN "documents" d ON val.document_id = d.id
+		JOIN "document" d ON val.document_id = d.id
 		JOIN "group" gr ON val.group_id = gr.id
         ON CONFLICT ON CONSTRAINT "pk_document_group" DO NOTHING;
 		
@@ -525,7 +525,7 @@ begin
         SELECT g.id AS group_id, d.id AS document_id, g.name AS group_name, d.name as document_name
         FROM "group" g
 		INNER JOIN document_group_permission dg ON g.id = dg.group_id
-		INNER JOIN "documents" d ON dg.document_id = d.id
+		INNER JOIN "document" d ON dg.document_id = d.id
         WHERE g.id = p_groupid AND d.id = p_documentid;
     END
     $BODY$

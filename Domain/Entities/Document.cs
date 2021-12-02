@@ -3,7 +3,7 @@ using Domain.Common;
 
 namespace Domain.Entities
 {
-    public class Documents: AuditableBaseEntity
+    public class Document: AuditableBaseEntity
     {
         public string Name { get; set; }
         public string Description { get; set; }

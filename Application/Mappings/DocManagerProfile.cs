@@ -24,7 +24,7 @@ namespace Application.Mappings
     {
         public DocManagerProfile()
         {
-            CreateMap<CreateDocument, Documents>()
+            CreateMap<CreateDocument, Document>()
             .ForMember(dto => dto.ContentType, opts => opts.MapFrom(s => s.file.ContentType))
             .ForMember(dto => dto.Length, opts => opts.MapFrom(s => s.file.Length))
             .ForMember(dto => dto.Name, opts => opts.MapFrom(s => s.file.FileName))
@@ -40,19 +40,19 @@ namespace Application.Mappings
 
             CreateMap<GetAllDocumentsQuery, GetAllDocumentsParameter>();
 
-            CreateMap<Documents, GetAllDocumentsViewModel>()
+            CreateMap<Document, GetAllDocumentsViewModel>()
             .ForMember(dto => dto.Length, opts => opts.Ignore())
             .AfterMap((source, destination) =>
             {
                 destination.Length = FormatSize(source.Length);
             });
 
-            CreateMap<Documents, DownloadDocumentViewModel>()
+            CreateMap<Document, DownloadDocumentViewModel>()
             .ForMember(dto => dto.FileName, opts => opts.MapFrom(s => s.Name))
             .ForMember(dto => dto.Content, opts => opts.MapFrom(s => s.Data));
 
 
-            CreateMap<Documents, GetDocumentInfoViewModel>()
+            CreateMap<Document, GetDocumentInfoViewModel>()
             .ForMember(dto => dto.Length, opts => opts.Ignore())
             .AfterMap((source, destination) =>
             {

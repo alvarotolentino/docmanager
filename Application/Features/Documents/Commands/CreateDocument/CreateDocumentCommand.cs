@@ -29,7 +29,7 @@ namespace Application.Features.Documents.Commands.CreateDocument
 
         public async Task<Response<CreateDocumentViewModel>> Handle(CreateDocument request, CancellationToken cancellationToken)
         {
-            var document = this.mapper.Map<Domain.Entities.Documents>(request);
+            var document = this.mapper.Map<Domain.Entities.Document>(request);
             var id = await this.documentRepositoryAsync.SaveDocument(document, cancellationToken);
             return new Response<CreateDocumentViewModel>(new CreateDocumentViewModel { Id = id, Name = document.Name });
         }
