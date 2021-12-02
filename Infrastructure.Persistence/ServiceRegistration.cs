@@ -15,15 +15,29 @@ using Microsoft.AspNetCore.Http;
 using Npgsql;
 using System.Data.Common;
 using Domain.Entities;
+using Infrastructure.Persistence.Connections;
 
 namespace Infrastructure.Persistence
 {
+    public enum DatabaseType
+    {
+        Metadata,
+        Data
+    }
+    public delegate DbConnection DatabaseResolver(DatabaseType databaseType);
     public static class ServiceRegistration
     {
 
+
         public static void AddPersistenceInfrastructureLayer(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddSingleton<DbConnection, NpgsqlConnection>(provider => new NpgsqlConnection(configuration.GetConnectionString("DocumentManagerConnection")));
+
+            services.AddSingleton<DatabaseConnections>(provider =>
+            {
+                return new DatabaseConnections(
+                metadataConnection: new NpgsqlConnection(configuration.GetConnectionString("DocumentMetadataConnection")),
+                dataConnection: new NpgsqlConnection(configuration.GetConnectionString("DocumentDataConnection")));
+            });
 
             services.AddTransient<IDocumentRepositoryAsync, DocumentRepositoryAsync>();
             services.AddTransient<IAccountRepositoryAsync, AccountRepositoryAsync>();

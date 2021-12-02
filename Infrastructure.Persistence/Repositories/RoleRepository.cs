@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Domain.Entities;
+using Infrastructure.Persistence.Connections;
 using Microsoft.AspNetCore.Identity;
 using Npgsql;
 
@@ -14,9 +15,9 @@ namespace Infrastructure.Persistence.Repositories
     {
 
         private NpgsqlConnection connection;
-        public RoleRepositoryAsync(DbConnection dbConnection)
+        public RoleRepositoryAsync(DatabaseConnections docManagerConnection)
         {
-            this.connection = (NpgsqlConnection)dbConnection;
+            this.connection = docManagerConnection.MetadataConnection;
         }
         public async Task<IdentityResult> CreateAsync(Role role, CancellationToken cancellationToken)
         {

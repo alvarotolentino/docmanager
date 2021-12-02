@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Domain.Entities;
+using Infrastructure.Persistence.Connections;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -18,9 +19,9 @@ namespace Infrastructure.Persistence.Repositories
 
         private NpgsqlConnection connection;
 
-        public GroupRepositoryAsync(DbConnection dbConnection)
+        public GroupRepositoryAsync(DatabaseConnections docManagerConnection)
         {
-            this.connection = (NpgsqlConnection)dbConnection;
+            this.connection = docManagerConnection.MetadataConnection;
         }
 
         public async Task<int> CreateGroup(Group group, CancellationToken cancellationToken)
@@ -135,7 +136,7 @@ namespace Infrastructure.Persistence.Repositories
 
         public void Dispose()
         {
-            if (this.connection.State == ConnectionState.Open)
+            if (this.connection != null && this.connection.State == ConnectionState.Open)
             {
                 this.connection.Close();
             }

@@ -11,6 +11,7 @@ begin
         content_type character varying not null,
         length bigint not null,
         data bytea not null,
+        document_ref integer not null,
         created_by integer null,
         created_at timestamp without time zone null,
         updated_by integer null,
@@ -136,17 +137,17 @@ begin
     
     raise info 'Starting creating functions and procedures';
 
-    CREATE OR REPLACE PROCEDURE usp_delete_document(p_id INOUT integer = NULL)
+    CREATE OR REPLACE FUNCTION udf_delete_document_metadata(p_id integer = NULL)
+    RETURNS TABLE (id integer, name character varying, document_ref integer)
     AS $BODY$
     BEGIN
+        RETURN QUERY
         WITH delete_document AS (
             DELETE FROM "document" doc 
             WHERE doc.id = p_id
-            RETURNING doc.id
-        ) SELECT COALESCE(
-            (SELECT id FROM delete_document LIMIT 1),
-            -1
-        ) INTO p_id;
+            RETURNING *
+        ) SELECT dd.id, dd.name, dd.document_ref 
+        FROM delete_document dd ;
     END
     $BODY$
     LANGUAGE plpgsql;
@@ -219,7 +220,7 @@ begin
 	CREATE OR REPLACE FUNCTION udf_get_document_data_by_id(
     p_documentid integer = NULL, p_userid integer = NULL
     )
-    RETURNS TABLE (name character varying, content_type character varying, length bigint, data bytea) 
+    RETURNS TABLE (name character varying, content_type character varying, length bigint, document_ref integer) 
     AS
     $BODY$
     BEGIN
@@ -236,7 +237,7 @@ begin
             INNER JOIN document_group_permission dgp ON doc.id = dgp.document_id
             INNER JOIN user_group ug ON dgp.group_id = ug.group_id
             WHERE doc.id = p_documentid AND ug.user_id = p_userid
-        ) SELECT doc.name, doc.content_type, doc.length, doc.data
+        ) SELECT doc.name, doc.content_type, doc.length, doc.document_ref
         FROM "document" doc
         WHERE doc.id = COALESCE((SELECT id FROM document_by_user LIMIT 1), (SELECT id FROM document_by_group LIMIT 1));
     END
@@ -346,12 +347,12 @@ begin
     $BODY$
     LANGUAGE plpgsql;
 
-    CREATE OR REPLACE PROCEDURE usp_insert_document(p_id INOUT integer = NULL,p_name character varying = NULL,p_description character varying = NULL,p_dategory character varying = NULL,p_content_type character varying = NULL,p_length bigint = NULL,p_data bytea = NULL,p_created_at timestamp with time zone = NULL,p_created_by integer = NULL)
+    CREATE OR REPLACE PROCEDURE usp_insert_document_metadata(p_id INOUT integer = NULL,p_name character varying = NULL,p_description character varying = NULL,p_dategory character varying = NULL,p_content_type character varying = NULL,p_length bigint = NULL,p_document_ref integer = NULL,p_created_at timestamp with time zone = NULL,p_created_by integer = NULL)
     AS $BODY$
     BEGIN
         WITH save_document AS (
-            INSERT INTO "document" (name,description,category,content_type,length,data,created_by,created_at,updated_by,updated_at) VALUES
-		    (p_name,p_description,p_dategory,p_content_type,p_length,p_data,p_created_by,p_created_at,p_created_by,p_created_at) RETURNING "id"
+            INSERT INTO "document" (name,description,category,content_type,length,document_ref,created_by,created_at,updated_by,updated_at) VALUES
+		    (p_name,p_description,p_dategory,p_content_type,p_length,p_document_ref,p_created_by,p_created_at,p_created_by,p_created_at) RETURNING "id"
         )
         INSERT INTO document_user_permission (user_id, document_id)
         SELECT p_created_by, (SELECT id FROM save_document)

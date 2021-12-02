@@ -9,6 +9,7 @@ using Application.Features.Account.Queries.GetAccounts;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Domain.Entities;
+using Infrastructure.Persistence.Connections;
 using Microsoft.AspNetCore.Identity;
 using Npgsql;
 
@@ -18,12 +19,11 @@ namespace Infrastructure.Persistence.Repositories
     {
         private NpgsqlConnection connection;
 
-
-        public AccountRepositoryAsync(DbConnection dbConnection,
+        public AccountRepositoryAsync(DatabaseConnections docManagerConnection,
         IAuthenticatedUserService authenticatedUserService,
         IDateTimeService dateTimeService)
         {
-            this.connection = (NpgsqlConnection)dbConnection;
+            this.connection = docManagerConnection.MetadataConnection;
         }
         public async Task<User> AddUserToGroup(UserGroup userGroup, CancellationToken cancellationToken)
         {

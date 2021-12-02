@@ -38,6 +38,7 @@ namespace Application.Features.Documents.Commands.CreateDocument
             document.CreatedBy = this.authenticatedUserService.UserId.Value;
             document.CreatedAt = this.dateTimeService.UtcDateTime;
             var id = await this.documentRepositoryAsync.SaveDocument(document, cancellationToken);
+            if (id == -1) return new Response<CreateDocumentViewModel>(null, message: "Document cannot be saved", succeeded: false);
             return new Response<CreateDocumentViewModel>(new CreateDocumentViewModel { Id = id, Name = document.Name });
         }
     }
