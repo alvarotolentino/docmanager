@@ -26,20 +26,20 @@ namespace Infrastructure.Persistence.Repositories
             this.authenticatedUserService = authenticatedUserService;
         }
 
-        public async Task<bool> DeleteDocumentById(long id, CancellationToken cancellationToken)
+        public async Task<bool> DeleteDocumentById(int id, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("CALL \"usp_delete_document\" (@p_id)", connection))
             {
                 connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int64) { Value = id, Direction = ParameterDirection.InputOutput });
+                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = id, Direction = ParameterDirection.InputOutput });
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var result = (long)cmd.Parameters["@p_id"].Value;
+                var result = (int)cmd.Parameters["@p_id"].Value;
                 connection.Close();
                 return result > -1;
             }
         }
 
-        public async Task<Documents> GetDocumentDataById(long id, CancellationToken cancellationToken)
+        public async Task<Documents> GetDocumentDataById(int id, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("udf_get_document_data_by_id", connection))
             {
@@ -66,7 +66,7 @@ namespace Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<Documents> GetDocumentInfoById(long id, CancellationToken cancellationToken)
+        public async Task<Documents> GetDocumentInfoById(int id, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("udf_get_document_info_by_id", connection))
             {
@@ -82,15 +82,15 @@ namespace Infrastructure.Persistence.Repositories
                     {
                         reader.Read();
                         documents = new Documents();
-                        documents.Id = (long)reader["id"];
+                        documents.Id = (int)reader["id"];
                         documents.Name = reader["name"].ToString();
                         documents.Description = reader["description"].ToString();
                         documents.Category = reader["category"].ToString();
                         documents.ContentType = reader["content_type"].ToString();
                         documents.Length = (long)reader["length"];
-                        documents.CreatedBy = (long)reader["created_by"];
+                        documents.CreatedBy = (int)reader["created_by"];
                         documents.CreatedAt = (DateTime)reader["created_at"];
-                        documents.UpdatedBy = (long)reader["updated_by"];
+                        documents.UpdatedBy = (int)reader["updated_by"];
                         documents.UpdatedAt = (DateTime)reader["updated_at"];
                     }
                 }
@@ -120,15 +120,15 @@ namespace Infrastructure.Persistence.Repositories
                         {
                             var document = new Documents
                             {
-                                Id = (long)reader["id"],
+                                Id = (int)reader["id"],
                                 Name = reader["name"].ToString(),
                                 Description = reader["description"].ToString(),
                                 Category = reader["category"].ToString(),
                                 ContentType = reader["content_type"].ToString(),
                                 Length = (long)reader["length"],
-                                CreatedBy = (long)reader["created_by"],
+                                CreatedBy = (int)reader["created_by"],
                                 CreatedAt = (DateTime)reader["created_at"],
-                                UpdatedBy = (long)reader["updated_by"],
+                                UpdatedBy = (int)reader["updated_by"],
                                 UpdatedAt = (DateTime)reader["updated_at"]
 
                             };
@@ -141,12 +141,12 @@ namespace Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<long> SaveDocument(Domain.Entities.Documents document, CancellationToken cancellationToken)
+        public async Task<int> SaveDocument(Domain.Entities.Documents document, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("CALL \"usp_insert_document\" (@p_id, @p_name, @p_description, @p_dategory, @p_content_type, @p_length, @p_data, @p_created_at, @p_created_by)", connection))
             {
                 connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int64) { Value = -1, Direction = ParameterDirection.InputOutput });
+                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = -1, Direction = ParameterDirection.InputOutput });
                 cmd.Parameters.AddWithValue("@p_name", document.Name);
                 cmd.Parameters.AddWithValue("@p_description", document.Description);
                 cmd.Parameters.AddWithValue("@p_dategory", document.Category);
@@ -157,7 +157,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("@p_created_by", this.authenticatedUserService.UserId);
                 cmd.Prepare();
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var id = (long)cmd.Parameters["@p_id"].Value;
+                var id = (int)cmd.Parameters["@p_id"].Value;
                 connection.Close();
                 return id;
             }

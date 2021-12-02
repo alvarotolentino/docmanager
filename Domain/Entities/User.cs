@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Domain.Entities
 {
-    public class User : IdentityUser<long>
+    public class User : IdentityUser<int>
     {
 
         public string FirstName { get; set; }
@@ -15,9 +15,9 @@ namespace Domain.Entities
 
         public List<Role> Roles { get; set; }
 
-        public virtual long CreatedBy { get; set; }
+        public virtual int CreatedBy { get; set; }
         public virtual DateTime CreatedAt { get; set; }
-        public virtual long UpdatedBy { get; set; }
+        public virtual int UpdatedBy { get; set; }
         public virtual DateTime UpdatedAt { get; set; }
 
         public bool OwnsToken(string token)

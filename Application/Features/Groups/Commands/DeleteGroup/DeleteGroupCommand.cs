@@ -9,7 +9,7 @@ namespace Application.Features.Groups.Commands.DeleteGroup
 {
     public class DeleteGroup : IRequest<Response<DeleteGroupViewModel>>
     {
-        public long Id { get; set; }
+        public int Id { get; set; }
     }
 
     public class DeleteGroupHandler : IRequestHandler<DeleteGroup, Response<DeleteGroupViewModel>>

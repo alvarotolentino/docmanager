@@ -7,7 +7,7 @@ namespace DocManager.Api.Services
 {
     public class AuthenticatedUserService : IAuthenticatedUserService
     {
-        public long? UserId { get; }
+        public int? UserId { get; }
 
         public AuthenticatedUserService(IHttpContextAccessor httpContextAccessor)
         {

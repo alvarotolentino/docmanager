@@ -44,9 +44,9 @@ namespace DocManager.Api.Controllers
         /// <returns></returns>
 
         [HttpPost("{userId}/group/{groupId}")]
-        public async Task<IActionResult> AddGroup([FromRoute] long userid, [FromRoute] long groupid)
+        public async Task<IActionResult> AddGroup([FromRoute] int userid, [FromRoute] int groupid)
         {
-            return Ok(await Mediator.Send(new AddUserGroup { userid = userid, groupid = groupid }));
+            return Ok(await Mediator.Send(new AddUserGroup { UserId = userid, GroupId = groupid }));
         }
 
         /// <summary>
@@ -56,9 +56,9 @@ namespace DocManager.Api.Controllers
         /// <param name="roleid"></param>
         /// <returns></returns>
         [HttpPost("{userId}/role/{roleid}")]
-        public async Task<IActionResult> AddRole([FromRoute] long userid, [FromRoute] long roleid)
+        public async Task<IActionResult> AddRole([FromRoute] int userid, [FromRoute] int roleid)
         {
-            return Ok(await Mediator.Send(new AddUserRole { userid = userid, roleid = roleid }));
+            return Ok(await Mediator.Send(new AddUserRole { UserId = userid, RoleId = roleid }));
         }
 
 

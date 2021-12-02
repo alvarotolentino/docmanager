@@ -10,8 +10,8 @@ namespace Application.Features.Documents.Commands.AssignGroupPermission
 {
     public class AssignGroupPermission : IRequest<Response<AssignGroupPermissionViewModel>>
     {
-        public long DocumentId { get; set; }
-        public long GroupId { get; set; }
+        public int DocumentId { get; set; }
+        public int GroupId { get; set; }
     }
 
     public class AssignGroupPermissionHandler : IRequestHandler<AssignGroupPermission, Response<AssignGroupPermissionViewModel>>

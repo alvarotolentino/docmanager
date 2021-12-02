@@ -4,39 +4,39 @@ begin
     raise info 'Starting creating tables';
 
     create table if not exists "documents" (
-        id bigint not null generated always as identity primary key,
+        id integer not null generated always as identity primary key,
         name character varying not null,
         description character varying not null,
         category character varying not null,
         content_type character varying not null,
         length bigint not null,
         data bytea not null,
-        created_by bigint null,
+        created_by integer null,
         created_at timestamp without time zone null,
-        updated_by bigint null,
+        updated_by integer null,
         updated_at timestamp without time zone null
     );
 
     create table if not exists "role" (
-        id bigint not null generated always as identity primary key,
+        id integer not null generated always as identity primary key,
         name character varying null,
-        created_by bigint null,
+        created_by integer null,
         created_at timestamp without time zone null,
-        updated_by bigint null,
+        updated_by integer null,
         updated_at timestamp without time zone null
     );
 
     create table if not exists "group" (
-        id bigint not null generated always as identity primary key,
+        id integer not null generated always as identity primary key,
         name character varying not null,
-        created_by bigint null,
+        created_by integer null,
         created_at timestamp without time zone null,
-        updated_by bigint null,
+        updated_by integer null,
         updated_at timestamp without time zone null
     );
 
     create table if not exists "user" (
-        id bigint not null generated always as identity primary key,
+        id integer not null generated always as identity primary key,
         first_name character varying null,
         last_name character varying null,
         user_name character varying null,
@@ -53,39 +53,39 @@ begin
         lockout_end timestamp with time zone null,
         lockout_enabled boolean null,
         access_failed_count integer null,
-        created_by bigint null,
+        created_by integer null,
         created_at timestamp without time zone null,
-        updated_by bigint null,
+        updated_by integer null,
         updated_at timestamp without time zone null
     );
 
     create table if not exists user_role (
-        user_id bigint not null,
-        role_id bigint not null,
+        user_id integer not null,
+        role_id integer not null,
         constraint "pk_user_role" primary key (user_id, role_id),
         constraint "fk_user_role_role_role_id" foreign key (role_id) references role (id) on delete cascade,
         constraint "fk_user_role_user_user_id" foreign key (user_id) references "user" (id) on delete cascade
     );
 
     create table if not exists user_group (
-        user_id bigint not null,
-        group_id bigint not null,
+        user_id integer not null,
+        group_id integer not null,
         constraint "pk_user_group" primary key (user_id, group_id),
         constraint "fk_user_group_user_id" foreign key (user_id) references "user" (id) on delete cascade,
         constraint "fk_user_group_group_id" foreign key (group_id) references "group" (id) on delete cascade
     );
 
     create table if not exists document_user_permission (
-        document_id bigint not null,
-        user_id bigint not null,
+        document_id integer not null,
+        user_id integer not null,
         constraint "pk_document_user" primary key (document_id, user_id),
         constraint "fk_document_user_document_id" foreign key (document_id) references "documents" (id) on delete cascade,
         constraint "fk_document_user_user_id" foreign key (user_id) references "user" (id) on delete cascade
     );
 
     create table if not exists document_group_permission (
-        document_id bigint not null,
-        group_id bigint not null,
+        document_id integer not null,
+        group_id integer not null,
         constraint "pk_document_group" primary key (document_id, group_id),
         constraint "fk_document_group_document_id" foreign key (document_id) references "documents" (id) on delete cascade,
         constraint "fk_document_group_group_id" foreign key (group_id) references "group" (id) on delete cascade
@@ -136,7 +136,7 @@ begin
     
     raise info 'Starting creating functions and procedures';
 
-    CREATE OR REPLACE PROCEDURE usp_delete_document(p_id INOUT bigint = NULL)
+    CREATE OR REPLACE PROCEDURE usp_delete_document(p_id INOUT integer = NULL)
     AS $BODY$
     BEGIN
         WITH delete_document AS (
@@ -151,8 +151,8 @@ begin
     $BODY$
     LANGUAGE plpgsql;
 
-	CREATE OR REPLACE FUNCTION udf_get_documents_by_page_number_size(p_number INTEGER = NULL,  p_size INTEGER = NULL, p_userid bigint = NULL)
-    RETURNS TABLE (id bigint, name character varying, description character varying, category character varying, content_type character varying, length bigint, created_by bigint, created_at timestamp, updated_by bigint, updated_at timestamp) 
+	CREATE OR REPLACE FUNCTION udf_get_documents_by_page_number_size(p_number INTEGER = NULL,  p_size INTEGER = NULL, p_userid integer = NULL)
+    RETURNS TABLE (id integer, name character varying, description character varying, category character varying, content_type character varying, length bigint, created_by integer, created_at timestamp, updated_by integer, updated_at timestamp) 
     AS
     $BODY$
         DECLARE
@@ -189,9 +189,9 @@ begin
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_get_document_info_by_id(
-    p_id bigint = NULL, p_userid bigint = NULL
+    p_id integer = NULL, p_userid integer = NULL
     )
-    RETURNS TABLE (id bigint, name character varying, description character varying, category character varying, content_type character varying, length bigint, created_by bigint, created_at timestamp, updated_by bigint, updated_at timestamp) 
+    RETURNS TABLE (id integer, name character varying, description character varying, category character varying, content_type character varying, length bigint, created_by integer, created_at timestamp, updated_by integer, updated_at timestamp) 
     AS
     $BODY$
     BEGIN
@@ -217,7 +217,7 @@ begin
     LANGUAGE plpgsql;
 
 	CREATE OR REPLACE FUNCTION udf_get_document_data_by_id(
-    p_id bigint = NULL, p_userid bigint = NULL
+    p_id integer = NULL, p_userid integer = NULL
     )
     RETURNS TABLE (name character varying, content_type character varying, length bigint, data bytea) 
     AS
@@ -243,7 +243,7 @@ begin
     $BODY$
     LANGUAGE plpgsql;
 
-    CREATE OR REPLACE PROCEDURE usp_insert_group(p_id INOUT bigint = NULL, p_name character varying = NULL, p_created_by bigint = NULL, p_created_at timestamp with time zone = NULL)
+    CREATE OR REPLACE PROCEDURE usp_insert_group(p_id INOUT integer = NULL, p_name character varying = NULL, p_created_by integer = NULL, p_created_at timestamp with time zone = NULL)
     AS $BODY$
     BEGIN
 
@@ -261,7 +261,7 @@ begin
     $BODY$
     LANGUAGE plpgsql;
 
-    CREATE OR REPLACE PROCEDURE usp_delete_group(p_id INOUT bigint = NULL)
+    CREATE OR REPLACE PROCEDURE usp_delete_group(p_id INOUT integer = NULL)
     AS $BODY$
     BEGIN
          WITH delete_group AS (
@@ -277,7 +277,7 @@ begin
     $BODY$
     LANGUAGE plpgsql;
 
-    CREATE OR REPLACE PROCEDURE usp_update_group(p_result INOUT INTEGER = NULL, p_id bigint = NULL, p_name character varying = NULL, p_updated_by bigint = null, p_updated_at timestamp with time zone = null)
+    CREATE OR REPLACE PROCEDURE usp_update_group(p_result INOUT INTEGER = NULL, p_id integer = NULL, p_name character varying = NULL, p_updated_by integer = null, p_updated_at timestamp with time zone = null)
     AS $BODY$
     BEGIN
         WITH group_updated AS (
@@ -296,9 +296,9 @@ begin
     LANGUAGE plpgsql;
 
 	CREATE OR REPLACE FUNCTION udf_get_group_by_id(
-    p_id bigint = NULL
+    p_id integer = NULL
     )
-    RETURNS TABLE (id bigint, name character varying, created_by bigint, created_at timestamp, updated_by bigint, updated_at timestamp) 
+    RETURNS TABLE (id integer, name character varying, created_by integer, created_at timestamp, updated_by integer, updated_at timestamp) 
     AS
     $BODY$
     BEGIN
@@ -311,9 +311,9 @@ begin
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_add_user_to_group(
-    p_userid bigint = NULL, p_groupid bigint = NULL
+    p_userid integer = NULL, p_groupid integer = NULL
     )
-    RETURNS TABLE (id bigint, group_id bigint, user_name character varying, name character varying) 
+    RETURNS TABLE (id integer, group_id integer, user_name character varying, name character varying) 
     AS
     $BODY$
     BEGIN
@@ -331,7 +331,7 @@ begin
     $BODY$
     LANGUAGE plpgsql;
 
-    CREATE OR REPLACE PROCEDURE usp_delete_account(p_id INOUT bigint = NULL)
+    CREATE OR REPLACE PROCEDURE usp_delete_account(p_id INOUT integer = NULL)
     AS $BODY$
     BEGIN
          WITH delete_user AS (
@@ -346,7 +346,7 @@ begin
     $BODY$
     LANGUAGE plpgsql;
 
-    CREATE OR REPLACE PROCEDURE usp_insert_document(p_id INOUT bigint = NULL,p_name character varying = NULL,p_description character varying = NULL,p_dategory character varying = NULL,p_content_type character varying = NULL,p_length bigint = NULL,p_data bytea = NULL,p_created_at timestamp with time zone = NULL,p_created_by bigint = NULL)
+    CREATE OR REPLACE PROCEDURE usp_insert_document(p_id INOUT integer = NULL,p_name character varying = NULL,p_description character varying = NULL,p_dategory character varying = NULL,p_content_type character varying = NULL,p_length bigint = NULL,p_data bytea = NULL,p_created_at timestamp with time zone = NULL,p_created_by integer = NULL)
     AS $BODY$
     BEGIN
         WITH save_document AS (
@@ -361,7 +361,7 @@ begin
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_get_groups_by_page_number_size(p_number INTEGER = NULL,  p_size INTEGER = NULL)
-    RETURNS TABLE (id bigint, name character varying, created_by bigint, created_at timestamp, updated_by bigint, updated_at timestamp) 
+    RETURNS TABLE (id integer, name character varying, created_by integer, created_at timestamp, updated_by integer, updated_at timestamp) 
     AS
     $BODY$
         DECLARE
@@ -381,9 +381,9 @@ begin
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_assig_role_to_user(
-    p_userid bigint = NULL, p_roleid bigint = NULL
+    p_userid integer = NULL, p_roleid integer = NULL
     )
-    RETURNS TABLE (id bigint, role_id bigint, user_name character varying, name character varying) 
+    RETURNS TABLE (id integer, role_id integer, user_name character varying, name character varying) 
     AS
     $BODY$
     BEGIN
@@ -403,7 +403,7 @@ begin
     LANGUAGE plpgsql;
 
 	CREATE OR REPLACE FUNCTION udf_create_account_default_role(
-	 	p_id OUT bigint,
+	 	p_id OUT integer,
         p_first_name character varying = NULL, 
         p_last_name character varying = NULL, 
         p_user_name character varying = NULL, 
@@ -411,7 +411,7 @@ begin
         p_email character varying = NULL, 
         p_normalized_email character varying = NULL,
         p_password_hashed text = NULL,
-        p_created_by bigint = NULL,
+        p_created_by integer = NULL,
         p_created_at timestamp with time zone = NULL
     )
     AS $BODY$
@@ -438,7 +438,7 @@ begin
     CREATE OR REPLACE FUNCTION udf_find_user_by_email (
         p_email character varying = NULL
     )
-    RETURNS TABLE (user_id bigint, first_name character varying, last_name character varying, user_name character varying, password_hash text, email character varying)
+    RETURNS TABLE (user_id integer, first_name character varying, last_name character varying, user_name character varying, password_hash text, email character varying)
     AS $BODY$
     BEGIN 
 		RETURN QUERY
@@ -452,7 +452,7 @@ begin
     CREATE OR REPLACE FUNCTION udf_find_user_roles_by_email (
         p_email character varying = NULL
     )
-    RETURNS TABLE (id bigint, name character varying)
+    RETURNS TABLE (id integer, name character varying)
     AS $BODY$
     BEGIN 
 		RETURN QUERY
@@ -468,7 +468,7 @@ begin
     CREATE OR REPLACE FUNCTION udf_find_user_groups_by_email (
         p_email character varying = NULL
     )
-    RETURNS TABLE (id bigint, name character varying)
+    RETURNS TABLE (id integer, name character varying)
     AS $BODY$
     BEGIN 
 		RETURN QUERY
@@ -482,9 +482,9 @@ begin
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_assig_user_document_permission(
-    p_userid bigint = NULL, p_documentid bigint = NULL
+    p_userid integer = NULL, p_documentid integer = NULL
     )
-    RETURNS TABLE (user_id bigint, document_id bigint, user_name character varying, document_name character varying) 
+    RETURNS TABLE (user_id integer, document_id integer, user_name character varying, document_name character varying) 
     AS
     $BODY$
     BEGIN
@@ -492,7 +492,7 @@ begin
         INSERT INTO document_user_permission (user_id, document_id)
         SELECT val.user_id, val.document_id
         FROM (VALUES (p_userid, p_documentid)) val (user_id, document_id)
-        JOIN user u ON val.user_id = u.id
+        JOIN "user" u ON val.user_id = u.id
         JOIN "documents" d ON val.document_id = d.id
         ON CONFLICT ON CONSTRAINT "pk_document_user" DO NOTHING;
 
@@ -508,9 +508,9 @@ begin
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_assig_group_document_permission(
-    p_groupid bigint = NULL, p_documentid bigint = NULL
+    p_groupid integer = NULL, p_documentid integer = NULL
     )
-    RETURNS TABLE (group_id bigint, document_id bigint, group_name character varying, document_name character varying) 
+    RETURNS TABLE (group_id integer, document_id integer, group_name character varying, document_name character varying) 
     AS
     $BODY$
     BEGIN
@@ -532,9 +532,9 @@ begin
     LANGUAGE plpgsql;
 
 	CREATE OR REPLACE FUNCTION udf_create_role(
-	 	p_id OUT bigint,
+	 	p_id OUT integer,
         p_name character varying = NULL, 
-        p_created_by bigint = NULL,
+        p_created_by integer = NULL,
         p_created_at timestamp with time zone = NULL
     )
     AS $BODY$
@@ -553,7 +553,7 @@ begin
     $BODY$
     LANGUAGE plpgsql;
 
-    CREATE OR REPLACE PROCEDURE usp_delete_role(p_id INOUT bigint = NULL)
+    CREATE OR REPLACE PROCEDURE usp_delete_role(p_id INOUT integer = NULL)
     AS $BODY$
     BEGIN
          WITH delete_role AS (
@@ -569,7 +569,7 @@ begin
     LANGUAGE plpgsql;
 
 	CREATE OR REPLACE FUNCTION udf_get_accounts_by_page_number_size(p_number INTEGER = NULL,  p_size INTEGER = NULL)
-    RETURNS TABLE (id bigint, email character varying) 
+    RETURNS TABLE (id integer, email character varying) 
     AS
     $BODY$
         DECLARE

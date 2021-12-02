@@ -57,7 +57,7 @@ namespace DocManager.Api.Middleware
 
                 context.Items["User"] = new User
                 {
-                    Id = long.Parse(jwtToken.Claims.First(x => x.Type == "uid").Value),
+                    Id = int.Parse(jwtToken.Claims.First(x => x.Type == "uid").Value),
                     Email = jwtToken.Claims.First(x => x.Type == "email").Value,
 
                 };

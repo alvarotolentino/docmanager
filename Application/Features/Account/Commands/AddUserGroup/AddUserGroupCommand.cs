@@ -10,8 +10,8 @@ namespace Application.Features.Account.Commands.AddUserGroup
 {
     public class AddUserGroup : IRequest<Response<AddUserGroupViewModel>>
     {
-        public long userid { get; set; }
-        public long groupid { get; set; }
+        public int UserId { get; set; }
+        public int GroupId { get; set; }
     }
 
     public class AddUserGroupHandler : IRequestHandler<AddUserGroup, Response<AddUserGroupViewModel>>

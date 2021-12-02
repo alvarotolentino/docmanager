@@ -6,12 +6,12 @@ namespace Application.Features.Groups.Commands.UpdateGroup
     {
         public UpdateGroupValidator()
         {
-            RuleFor(p => p.id)
+            RuleFor(p => p.Id)
             .NotEmpty().WithMessage("{PropertyName} is required.")
             .NotNull()
             .GreaterThan(0);
 
-            RuleFor(p => p.name)
+            RuleFor(p => p.Name)
             .NotEmpty().WithMessage("{PropertyName} is required.")
             .NotNull();
         }

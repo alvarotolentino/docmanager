@@ -42,10 +42,10 @@ namespace Infrastructure.Persistence.Repositories
                     if (reader.HasRows)
                     {
                         reader.Read();
-                        user.Id = (long)reader["id"];
+                        user.Id = (int)reader["id"];
                         user.UserName = reader["user_name"].ToString();
                         var group = new Group();
-                        group.Id = (long)reader["group_id"];
+                        group.Id = (int)reader["group_id"];
                         group.Name = reader["name"].ToString();
                         user.Groups.Add(group);
                     }
@@ -55,7 +55,7 @@ namespace Infrastructure.Persistence.Repositories
             return user;
         }
 
-        public async Task<User> AssignRole(long userId, long roleId, CancellationToken cancellationToken)
+        public async Task<User> AssignRole(int userId, int roleId, CancellationToken cancellationToken)
         {
             var user = new User() { Roles = new List<Role>() };
             using (var cmd = new NpgsqlCommand("udf_assig_role_to_user", connection))
@@ -69,10 +69,10 @@ namespace Infrastructure.Persistence.Repositories
                     if (reader.HasRows)
                     {
                         reader.Read();
-                        user.Id = (long)reader["id"];
+                        user.Id = (int)reader["id"];
                         user.UserName = reader["user_name"].ToString();
                         var role = new Role();
-                        role.Id = (long)reader["role_id"];
+                        role.Id = (int)reader["role_id"];
                         role.Name = reader["name"].ToString();
                         user.Roles.Add(role);
                     }
@@ -87,7 +87,7 @@ namespace Infrastructure.Persistence.Repositories
             {
                 connection.Open();
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.Add(new NpgsqlParameter("p_id", DbType.Int64) { Direction = ParameterDirection.Output });
+                cmd.Parameters.Add(new NpgsqlParameter("p_id", DbType.Int32) { Direction = ParameterDirection.Output });
                 cmd.Parameters.AddWithValue("p_first_name", user.FirstName);
                 cmd.Parameters.AddWithValue("p_last_name", user.LastName);
                 cmd.Parameters.AddWithValue("p_user_name", user.UserName);
@@ -100,7 +100,7 @@ namespace Infrastructure.Persistence.Repositories
 
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 connection.Close();
-                user.Id = (long)cmd.Parameters["p_id"].Value;
+                user.Id = (int)cmd.Parameters["p_id"].Value;
 
                 return user.Id > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Email '{user.Email}' already exists." } });
             }
@@ -126,7 +126,7 @@ namespace Infrastructure.Persistence.Repositories
                         return null;
 
                     reader.Read();
-                    user.Id = (long)reader["user_id"];
+                    user.Id = (int)reader["user_id"];
                     user.FirstName = reader["first_name"].ToString();
                     user.LastName = reader["last_name"].ToString();
                     user.UserName = reader["user_name"].ToString();
@@ -138,7 +138,7 @@ namespace Infrastructure.Persistence.Repositories
                         while (reader.Read())
                         {
                             var role = new Role();
-                            role.Id = (long)reader["id"];
+                            role.Id = (int)reader["id"];
                             role.Name = reader["name"].ToString();
                             user.Roles.Add(role);
                         }
@@ -149,7 +149,7 @@ namespace Infrastructure.Persistence.Repositories
                         while (reader.Read())
                         {
                             var group = new Group();
-                            group.Id = (long)reader["id"];
+                            group.Id = (int)reader["id"];
                             group.Name = reader["name"].ToString();
                             user.Groups.Add(group);
                         }
@@ -173,9 +173,9 @@ namespace Infrastructure.Persistence.Repositories
             using (var cmd = new NpgsqlCommand("CALL \"usp_delete_account\" (@p_id)", connection))
             {
                 connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int64) { Value = user.Id, Direction = ParameterDirection.InputOutput });
+                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = user.Id, Direction = ParameterDirection.InputOutput });
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var result = (long)cmd.Parameters["@p_id"].Value;
+                var result = (int)cmd.Parameters["@p_id"].Value;
                 connection.Close();
                 return result > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"User not found." } });
             }
@@ -201,7 +201,7 @@ namespace Infrastructure.Persistence.Repositories
                         {
                             var user = new User
                             {
-                                Id = (long)reader["id"],
+                                Id = (int)reader["id"],
                                 Email = reader["email"].ToString()
                             };
                             users.Add(user);

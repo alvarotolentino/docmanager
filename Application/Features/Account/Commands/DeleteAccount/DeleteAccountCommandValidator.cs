@@ -6,7 +6,7 @@ namespace Application.Features.Account.Commands.DeleteAccount
     {
         public DeleteAccountValidator()
         {
-            RuleFor(p => p.id)
+            RuleFor(p => p.Id)
             .NotEmpty().WithMessage("{PropertyName} is required.")
             .NotNull()
             .GreaterThan(0);

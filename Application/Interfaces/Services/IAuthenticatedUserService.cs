@@ -2,6 +2,6 @@ namespace Application.Interfaces.Services
 {
     public interface IAuthenticatedUserService
     {
-         long? UserId { get; }
+         int? UserId { get; }
     }
 }

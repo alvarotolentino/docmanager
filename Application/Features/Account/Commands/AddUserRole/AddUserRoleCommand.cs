@@ -11,8 +11,8 @@ namespace Application.Features.Account.Commands.AddUserRole
 {
     public class AddUserRole : IRequest<Response<AddUserRoleViewModel>>
     {
-        public long userid { get; set; }
-        public long roleid { get; set; }
+        public int UserId { get; set; }
+        public int RoleId { get; set; }
     }
 
     public class AddUserRoleHandler : IRequestHandler<AddUserRole, Response<AddUserRoleViewModel>>
@@ -26,7 +26,7 @@ namespace Application.Features.Account.Commands.AddUserRole
         }
         public async Task<Response<AddUserRoleViewModel>> Handle(AddUserRole request, CancellationToken cancellationToken)
         {
-            var result = await this.accountRepository.AssignRole(request.userid, request.roleid, cancellationToken);
+            var result = await this.accountRepository.AssignRole(request.UserId, request.RoleId, cancellationToken);
             if (result == null) return new Response<AddUserRoleViewModel>(null, message: "User or Role not found.", succeeded: false);
             var addUserRoleViewModel = this.mapper.Map<AddUserRoleViewModel>(result);
             return new Response<AddUserRoleViewModel>(addUserRoleViewModel, message: "Role assigned");

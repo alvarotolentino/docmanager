@@ -10,7 +10,7 @@ namespace Application.Features.Documents.Queries.DownloadDocumentById
 {
     public class DownloadDocumentByIdQuery : IRequest<Response<DownloadDocumentViewModel>>
     {
-        public long id { get; set; }
+        public int Id { get; set; }
     }
 
     public class DownloadDocumentByIdQueryHandler : IRequestHandler<DownloadDocumentByIdQuery, Response<DownloadDocumentViewModel>>
@@ -26,7 +26,7 @@ namespace Application.Features.Documents.Queries.DownloadDocumentById
         }
         public async Task<Response<DownloadDocumentViewModel>> Handle(DownloadDocumentByIdQuery query, CancellationToken cancellationToken)
         {
-            var document = await documentRepositoryAsync.GetDocumentDataById(query.id, cancellationToken);
+            var document = await documentRepositoryAsync.GetDocumentDataById(query.Id, cancellationToken);
             if (document == null) return new Response<DownloadDocumentViewModel>(null, "Document not found or you do not have permissions.", succeeded: false);
             var documentViewModel = this.mapper.Map<DownloadDocumentViewModel>(document);
             return new Response<DownloadDocumentViewModel>(data: documentViewModel);

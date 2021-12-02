@@ -7,10 +7,10 @@ namespace Application.Interfaces.Repositories
 {
     public interface IGroupRepositoryAsync
     {
-        Task<long> CreateGroup(Group group, CancellationToken cancellationToken);
-        Task<bool> DeleteGroup(long id, CancellationToken cancellationToken);
+        Task<int> CreateGroup(Group group, CancellationToken cancellationToken);
+        Task<bool> DeleteGroup(int id, CancellationToken cancellationToken);
         Task<Group> Update(Group group, CancellationToken cancellationToken);
-        Task<Group> GetById(long id, CancellationToken cancellationToken);
+        Task<Group> GetById(int id, CancellationToken cancellationToken);
         Task<IReadOnlyList<Group>> GetGroups(int pageNumber, int pageSize, CancellationToken cancellationToken);
     }
 }

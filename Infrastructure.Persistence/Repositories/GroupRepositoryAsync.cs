@@ -27,30 +27,30 @@ namespace Infrastructure.Persistence.Repositories
             this.authenticatedUserService = authenticatedUserService;
         }
 
-        public async Task<long> CreateGroup(Group group, CancellationToken cancellationToken)
+        public async Task<int> CreateGroup(Group group, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("CALL \"usp_insert_group\" (@p_id, @p_name, @p_created_by, @p_created_at)", connection))
             {
                 connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int64) { Value = -1, Direction = ParameterDirection.InputOutput });
+                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = -1, Direction = ParameterDirection.InputOutput });
                 cmd.Parameters.AddWithValue("@p_name", parameterType: NpgsqlDbType.Varchar, group.Name);
                 cmd.Parameters.AddWithValue("@p_created_by", this.authenticatedUserService.UserId);
                 cmd.Parameters.AddWithValue("@p_created_at", this.dateTimeService.UtcDateTime);
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var value = (long)cmd.Parameters["@p_id"].Value;
+                var value = (int)cmd.Parameters["@p_id"].Value;
                 connection.Close();
                 return value;
             }
         }
 
-        public async Task<bool> DeleteGroup(long id, CancellationToken cancellationToken)
+        public async Task<bool> DeleteGroup(int id, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("CALL \"usp_delete_group\" (@p_id)", connection))
             {
                 connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int64) { Value = id, Direction = ParameterDirection.InputOutput });
+                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = id, Direction = ParameterDirection.InputOutput });
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var result = (long)cmd.Parameters["@p_id"].Value;
+                var result = (int)cmd.Parameters["@p_id"].Value;
                 connection.Close();
                 return result > -1;
             }
@@ -73,7 +73,7 @@ namespace Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<Group> GetById(long id, CancellationToken cancellationToken)
+        public async Task<Group> GetById(int id, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("udf_get_group_by_id", connection))
             {
@@ -88,11 +88,11 @@ namespace Infrastructure.Persistence.Repositories
                     {
                         reader.Read();
                         group = new Group();
-                        group.Id = (long)reader["id"];
+                        group.Id = (int)reader["id"];
                         group.Name = reader["name"].ToString();
-                        group.CreatedBy = (long)reader["created_by"];
+                        group.CreatedBy = (int)reader["created_by"];
                         group.CreatedAt = (DateTime)reader["created_at"];
-                        group.UpdatedBy = (long)reader["updated_by"];
+                        group.UpdatedBy = (int)reader["updated_by"];
                         group.UpdatedAt = (DateTime)reader["updated_at"];
 
                     }
@@ -121,11 +121,11 @@ namespace Infrastructure.Persistence.Repositories
                         {
                             var group = new Group
                             {
-                                Id = (long)reader["id"],
+                                Id = (int)reader["id"],
                                 Name = reader["name"].ToString(),
-                                CreatedBy = (long)reader["created_by"],
+                                CreatedBy = (int)reader["created_by"],
                                 CreatedAt = (DateTime)reader["created_at"],
-                                UpdatedBy = (long)reader["updated_by"],
+                                UpdatedBy = (int)reader["updated_by"],
                                 UpdatedAt = (DateTime)reader["updated_at"],
                             };
                             groups.Add(group);

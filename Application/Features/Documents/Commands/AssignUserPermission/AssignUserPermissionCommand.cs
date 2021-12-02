@@ -10,8 +10,8 @@ namespace Application.Features.Documents.Commands.AssignUserPermission
 {
     public class AssignUserPermission : IRequest<Response<AssignUserPermissionViewModel>>
     {
-        public long DocumentId { get; set; }
-        public long UserId { get; set; }
+        public int DocumentId { get; set; }
+        public int UserId { get; set; }
     }
 
     public class AssignUserPermissionsHandler : IRequestHandler<AssignUserPermission, Response<AssignUserPermissionViewModel>>

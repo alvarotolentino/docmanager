@@ -10,7 +10,7 @@ namespace Application.Features.Groups.Queries.GetGroupById
 {
     public class GetGroupByIdQuery : IRequest<Response<GetGroupByIdViewModel>>
     {
-        public long Id { get; set; }
+        public int Id { get; set; }
     }
 
     public class GetGroupByIdQueryHandler : IRequestHandler<GetGroupByIdQuery, Response<GetGroupByIdViewModel>>

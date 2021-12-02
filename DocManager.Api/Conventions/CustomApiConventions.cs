@@ -12,7 +12,7 @@ namespace DocManager.Api.Conventions
         [ApiConventionNameMatch(ApiConventionNameMatchBehavior.Prefix)]
         public static void Get(
             [ApiConventionNameMatch(ApiConventionNameMatchBehavior.Suffix)]
-            long id)
+            int id)
         { }
 
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -29,7 +29,7 @@ namespace DocManager.Api.Conventions
         [ApiConventionNameMatch(ApiConventionNameMatchBehavior.Prefix)]
         public static void Update(
             [ApiConventionNameMatch(ApiConventionNameMatchBehavior.Suffix)]
-            long id, 
+            int id, 
             [ApiConventionNameMatch(ApiConventionNameMatchBehavior.Any)]
             object request
         )
@@ -49,7 +49,7 @@ namespace DocManager.Api.Conventions
         [ApiConventionNameMatch(ApiConventionNameMatchBehavior.Prefix)]
         public static void Delete(
             [ApiConventionNameMatch(ApiConventionNameMatchBehavior.Suffix)]
-            long id)
+            int id)
         { }
     }
 }

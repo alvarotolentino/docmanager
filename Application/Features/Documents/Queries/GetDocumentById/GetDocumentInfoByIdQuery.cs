@@ -10,7 +10,7 @@ namespace Application.Features.Documents.Queries.GetDocumentById
 {
     public class GetDocumentInfoByIdQuery : IRequest<Response<GetDocumentInfoViewModel>>
     {
-        public long id { get; set; }
+        public int Id { get; set; }
     }
     public class GetDocumentInfoByIdQueryHandler : IRequestHandler<GetDocumentInfoByIdQuery, Response<GetDocumentInfoViewModel>>
     {
@@ -24,7 +24,7 @@ namespace Application.Features.Documents.Queries.GetDocumentById
         }
         public async Task<Response<GetDocumentInfoViewModel>> Handle(GetDocumentInfoByIdQuery query, CancellationToken cancellationToken)
         {
-            var document = await documentRepositoryAsync.GetDocumentInfoById(query.id, cancellationToken);
+            var document = await documentRepositoryAsync.GetDocumentInfoById(query.Id, cancellationToken);
             if (document == null) return new Response<GetDocumentInfoViewModel>(null, "Document not found or you do not have permissions.", succeeded: false);
             var documentViewModel = this.mapper.Map<GetDocumentInfoViewModel>(document);
             return new Response<GetDocumentInfoViewModel>(data: documentViewModel);

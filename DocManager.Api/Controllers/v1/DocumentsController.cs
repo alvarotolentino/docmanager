@@ -26,9 +26,9 @@ namespace DocManager.Api.Controllers.v1
         /// <param name="id">Document Id</param>
         /// <returns></returns>
         [HttpGet("download/{id}")]
-        public async Task<IActionResult> GetDocument(long id)
+        public async Task<IActionResult> GetDocument(int id)
         {
-            var result = await Mediator.Send(new DownloadDocumentByIdQuery { id = id });
+            var result = await Mediator.Send(new DownloadDocumentByIdQuery { Id = id });
 
             if (!result.Succeeded)
                 return NotFound(result);
@@ -44,9 +44,9 @@ namespace DocManager.Api.Controllers.v1
         /// <param name="id">Document Id</param>
         /// <returns></returns>
         [HttpGet("info/{id}")]
-        public async Task<IActionResult> GetInfo(long id)
+        public async Task<IActionResult> GetInfo(int id)
         {
-            var result = await Mediator.Send(new GetDocumentInfoByIdQuery { id = id });
+            var result = await Mediator.Send(new GetDocumentInfoByIdQuery { Id = id });
             if (!result.Succeeded)
                 return NotFound(result);
 
@@ -89,7 +89,7 @@ namespace DocManager.Api.Controllers.v1
         /// <returns></returns>
         [Authorize(UserRoles.Admin)]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDocument(long id)
+        public async Task<IActionResult> DeleteDocument(int id)
         {
             return Ok(await Mediator.Send(new DeleteDocumentById { Id = id }));
         }
@@ -103,7 +103,7 @@ namespace DocManager.Api.Controllers.v1
         [Authorize(UserRoles.Admin)]
 
         [HttpPut("{id}/user/{userId}")]
-        public async Task<IActionResult> AssignUserPermissions(long id, long userId)
+        public async Task<IActionResult> AssignUserPermissions(int id, int userId)
         {
             var result = await Mediator.Send(new AssignUserPermission { DocumentId = id, UserId = userId });
             if (!result.Succeeded)
@@ -121,7 +121,7 @@ namespace DocManager.Api.Controllers.v1
         [Authorize(UserRoles.Admin)]
 
         [HttpPut("{id}/group/{groupId}")]
-        public async Task<IActionResult> AssignGroupPermissions(long id, long groupId)
+        public async Task<IActionResult> AssignGroupPermissions(int id, int groupId)
         {
             var result = await Mediator.Send(new AssignGroupPermission { DocumentId = id, GroupId = groupId });
             if (!result.Succeeded)

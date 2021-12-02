@@ -11,7 +11,7 @@ namespace Application.Features.Documents.Commands.DeleteDocument
 {
     public class DeleteDocumentById : IRequest<Response<DeleteDocumentViewModel>>
     {
-        public long Id { get; set; }
+        public int Id { get; set; }
     }
 
     public class DeleteDocumentHandler : IRequestHandler<DeleteDocumentById, Response<DeleteDocumentViewModel>>

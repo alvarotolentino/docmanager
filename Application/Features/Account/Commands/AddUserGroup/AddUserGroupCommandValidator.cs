@@ -6,12 +6,12 @@ namespace Application.Features.Account.Commands.AddUserGroup
     {
         public AddUserGroupValidator()
         {
-            RuleFor(p => p.userid)
+            RuleFor(p => p.UserId)
             .NotEmpty().WithMessage("{PropertyName} is required.")
             .NotNull()
             .GreaterThan(0);
 
-            RuleFor(p => p.groupid)
+            RuleFor(p => p.GroupId)
             .NotEmpty().WithMessage("{PropertyName} is required.")
             .NotNull()
             .GreaterThan(0);

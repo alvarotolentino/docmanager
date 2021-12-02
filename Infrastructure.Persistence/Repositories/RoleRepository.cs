@@ -29,12 +29,12 @@ namespace Infrastructure.Persistence.Repositories
             using (var cmd = new NpgsqlCommand("udf_create_role", connection))
             {
                 connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("p_id", DbType.Int64) { Direction = ParameterDirection.Output });
+                cmd.Parameters.Add(new NpgsqlParameter("p_id", DbType.Int32) { Direction = ParameterDirection.Output });
                 cmd.Parameters.AddWithValue("p_name", role.Name);
                 cmd.Parameters.AddWithValue("p_created_at", this.dateTimeService.UtcDateTime);
                 cmd.Parameters.AddWithValue("p_created_by", this.authenticatedUserService.UserId);
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var id = (long)cmd.Parameters["p_id"].Value;
+                var id = (int)cmd.Parameters["p_id"].Value;
                 connection.Close();
                 return id > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Role '{role.Name}' already exists." } });
 
@@ -46,9 +46,9 @@ namespace Infrastructure.Persistence.Repositories
             using (var cmd = new NpgsqlCommand("CALL \"usp_delete_role\" (@p_id)", connection))
             {
                 connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int64) { Value = role.Id, Direction = ParameterDirection.InputOutput });
+                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = role.Id, Direction = ParameterDirection.InputOutput });
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var result = (long)cmd.Parameters["@p_id"].Value;
+                var result = (int)cmd.Parameters["@p_id"].Value;
                 connection.Close();
                 return result > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"User not found." } });
             }

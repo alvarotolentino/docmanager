@@ -11,8 +11,8 @@ namespace Application.Features.Groups.Commands.UpdateGroup
 {
     public class UpdateGroup : IRequest<Response<UpdateGroupViewModel>>
     {
-        public long id { get; set; }
-        public string name { get; set; }
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 
     public class UpdateGroupHandler : IRequestHandler<UpdateGroup, Response<UpdateGroupViewModel>>

@@ -33,9 +33,9 @@ namespace DocManager.Api.Controllers.v1
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateGroup(long id, UpdateGroup request)
+        public async Task<IActionResult> UpdateGroup(int id, UpdateGroup request)
         {
-            request.id = id;
+            request.Id = id;
             return Ok(await Mediator.Send(request));
         }
 
@@ -45,7 +45,7 @@ namespace DocManager.Api.Controllers.v1
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteGroup(long id)
+        public async Task<IActionResult> DeleteGroup(int id)
         {
             return Ok(await Mediator.Send(new DeleteGroup { Id = id }));
         }
@@ -56,7 +56,7 @@ namespace DocManager.Api.Controllers.v1
         /// <param name="id"></param>
         /// <returns>A group</returns>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetGroup(long id)
+        public async Task<IActionResult> GetGroup(int id)
         {
             return Ok(await Mediator.Send(new GetGroupByIdQuery { Id = id }));
         }
