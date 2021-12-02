@@ -5,6 +5,8 @@ using Application.Common;
 using Application.Enums;
 using Application.Exceptions;
 using Application.Interfaces.Repositories;
+using AutoMapper;
+using Domain.Entities;
 using MediatR;
 
 namespace Application.Features.Documents.Commands.DeleteDocument
@@ -16,15 +18,17 @@ namespace Application.Features.Documents.Commands.DeleteDocument
 
     public class DeleteDocumentHandler : IRequestHandler<DeleteDocumentById, Response<DeleteDocumentViewModel>>
     {
-        private const string ERRORTITLE = "Document Error";
         private readonly IDocumentRepositoryAsync documentRepositoryAsync;
-        public DeleteDocumentHandler(IDocumentRepositoryAsync documentRepositoryAsync)
+        private readonly IMapper mapper;
+        public DeleteDocumentHandler(IDocumentRepositoryAsync documentRepositoryAsync, IMapper mapper)
         {
             this.documentRepositoryAsync = documentRepositoryAsync;
+            this.mapper = mapper;
         }
         public async Task<Response<DeleteDocumentViewModel>> Handle(DeleteDocumentById request, CancellationToken cancellationToken)
         {
-            var result = await this.documentRepositoryAsync.DeleteDocumentById(request.Id, cancellationToken);
+            var document = this.mapper.Map<Document>(request);
+            var result = await this.documentRepositoryAsync.DeleteDocumentById(document, cancellationToken);
             var deleteDocumentViewModel = result ? new DeleteDocumentViewModel() { Id = request.Id } : null;
             return new Response<DeleteDocumentViewModel>(deleteDocumentViewModel, message: result ? null : "Document not found");
 

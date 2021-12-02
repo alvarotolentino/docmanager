@@ -56,12 +56,12 @@ namespace DocManager.Api.Controllers.v1
         /// <summary>
         /// Gets all documents 
         /// </summary>
-        /// <param name="pagination">Page size and page number</param>
+        /// <param name="request">Page size and page number</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> GetDocuments([FromQuery] GetAllDocumentsParameter pagination)
+        public async Task<IActionResult> GetDocuments([FromQuery] GetAllDocumentsQuery request)
         {
-            return Ok(await Mediator.Send(new GetAllDocumentsQuery() { PageSize = pagination.pagesize, PageNumber = pagination.pagenumber }));
+            return Ok(await Mediator.Send(request));
         }
 
         /// <summary>

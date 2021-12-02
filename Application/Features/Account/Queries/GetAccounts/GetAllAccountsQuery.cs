@@ -29,9 +29,9 @@ namespace Application.Features.Account.Queries.GetAccounts
         {
             var filter = this.mapper.Map<GetAllAccountsParameter>(query);
             var users = await this.accountRepository.GetAccounts(filter, cancellationToken);
-            if (users == null) return new PagedResponse<IEnumerable<GetAllAccountsViewModel>>(null, filter.pagenumber, filter.pagesize);
+            if (users == null) return new PagedResponse<IEnumerable<GetAllAccountsViewModel>>(null, filter.PageNumber, filter.PageSize);
             var accountViewModels = this.mapper.Map<IEnumerable<GetAllAccountsViewModel>>(users);
-            return new PagedResponse<IEnumerable<GetAllAccountsViewModel>>(accountViewModels, filter.pagenumber, filter.pagesize);
+            return new PagedResponse<IEnumerable<GetAllAccountsViewModel>>(accountViewModels, filter.PageNumber, filter.PageSize);
         }
     }
 }

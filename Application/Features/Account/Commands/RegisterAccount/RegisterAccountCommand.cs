@@ -33,15 +33,23 @@ namespace Application.Features.Account.Commands.RegisterAccount
         private readonly IEmailService emailService;
         private readonly IAccountRepositoryAsync accountRepository;
         private readonly IPasswordHasher<User> passwordHasher;
+        private readonly IDateTimeService dateTimeService;
+        private readonly IAuthenticatedUserService authenticatedUserService;
 
         public RegisterAccountHandler(
             IAccountRepositoryAsync accountRepository,
             IPasswordHasher<User> passwordHasher,
-            IEmailService emailService)
+            IEmailService emailService,
+            IDateTimeService dateTimeService,
+            IAuthenticatedUserService authenticatedUserService
+             )
         {
             this.accountRepository = accountRepository;
             this.emailService = emailService;
             this.passwordHasher = passwordHasher;
+
+            this.dateTimeService = dateTimeService;
+            this.authenticatedUserService = authenticatedUserService;
         }
         public async Task<Response<RegisterAccountViewModel>> Handle(RegisterAccount request, CancellationToken cancellationToken)
         {
@@ -50,7 +58,9 @@ namespace Application.Features.Account.Commands.RegisterAccount
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 UserName = request.UserName,
-                Email = request.Email
+                Email = request.Email,
+                CreatedBy = this.authenticatedUserService.UserId.Value,
+                CreatedAt = this.dateTimeService.UtcDateTime
             };
 
             user.PasswordHash = passwordHasher.HashPassword(user, request.Password);

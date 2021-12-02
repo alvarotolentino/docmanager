@@ -189,7 +189,7 @@ begin
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_get_document_info_by_id(
-    p_id integer = NULL, p_userid integer = NULL
+    p_documentid integer = NULL, p_userid integer = NULL
     )
     RETURNS TABLE (id integer, name character varying, description character varying, category character varying, content_type character varying, length bigint, created_by integer, created_at timestamp, updated_by integer, updated_at timestamp) 
     AS
@@ -201,13 +201,13 @@ begin
             SELECT doc.id
             FROM "document" doc
             INNER JOIN document_user_permission dup ON doc.id = dup.document_id
-            WHERE doc.id = p_id AND dup.user_id = p_userid
+            WHERE doc.id = p_documentid AND dup.user_id = p_userid
         ), document_by_group AS (
             SELECT doc.id
             FROM "document" doc
             INNER JOIN document_group_permission dgp ON doc.id = dgp.document_id
             INNER JOIN user_group ug ON dgp.group_id = ug.group_id
-            WHERE doc.id = p_id AND ug.user_id = p_userid
+            WHERE doc.id = p_documentid AND ug.user_id = p_userid
         ) SELECT doc.id, doc.name, doc.description, doc.category, doc.content_type, doc.length, doc.created_by, doc.created_at, doc.updated_by, doc.updated_at
         FROM "document" doc
         WHERE doc.id = COALESCE((SELECT du.id FROM document_by_user du LIMIT 1), (SELECT dg.id FROM document_by_group dg LIMIT 1));
@@ -217,7 +217,7 @@ begin
     LANGUAGE plpgsql;
 
 	CREATE OR REPLACE FUNCTION udf_get_document_data_by_id(
-    p_id integer = NULL, p_userid integer = NULL
+    p_documentid integer = NULL, p_userid integer = NULL
     )
     RETURNS TABLE (name character varying, content_type character varying, length bigint, data bytea) 
     AS
@@ -229,13 +229,13 @@ begin
             SELECT doc.id
             FROM "document" doc
             INNER JOIN document_user_permission dup ON doc.id = dup.document_id
-            WHERE doc.id = p_id AND dup.user_id = p_userid
+            WHERE doc.id = p_documentid AND dup.user_id = p_userid
         ), document_by_group AS (
             SELECT doc.id
             FROM "document" doc
             INNER JOIN document_group_permission dgp ON doc.id = dgp.document_id
             INNER JOIN user_group ug ON dgp.group_id = ug.group_id
-            WHERE doc.id = p_id AND ug.user_id = p_userid
+            WHERE doc.id = p_documentid AND ug.user_id = p_userid
         ) SELECT doc.name, doc.content_type, doc.length, doc.data
         FROM "document" doc
         WHERE doc.id = COALESCE((SELECT id FROM document_by_user LIMIT 1), (SELECT id FROM document_by_group LIMIT 1));

@@ -68,7 +68,7 @@ namespace DocManager.Api.Controllers.v1
         [HttpGet]
         public async Task<IActionResult> GetGroups([FromQuery] GetAllGroupsParameter pagination)
         {
-            return Ok(await Mediator.Send(new GetGroupsQuery() { PageSize = pagination.pagesize, PageNumber = pagination.pagenumber }));
+            return Ok(await Mediator.Send(new GetGroupsQuery() { PageSize = pagination.PageSize, PageNumber = pagination.PageNumber }));
         }
 
     }

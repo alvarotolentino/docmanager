@@ -14,15 +14,9 @@ namespace Infrastructure.Persistence.Repositories
     {
 
         private NpgsqlConnection connection;
-        private readonly IDateTimeService dateTimeService;
-        private readonly IAuthenticatedUserService authenticatedUserService;
-        public RoleRepositoryAsync(DbConnection dbConnection,
-        IAuthenticatedUserService authenticatedUserService,
-        IDateTimeService dateTimeService)
+        public RoleRepositoryAsync(DbConnection dbConnection)
         {
             this.connection = (NpgsqlConnection)dbConnection;
-            this.dateTimeService = dateTimeService;
-            this.authenticatedUserService = authenticatedUserService;
         }
         public async Task<IdentityResult> CreateAsync(Role role, CancellationToken cancellationToken)
         {
@@ -31,8 +25,8 @@ namespace Infrastructure.Persistence.Repositories
                 connection.Open();
                 cmd.Parameters.Add(new NpgsqlParameter("p_id", DbType.Int32) { Direction = ParameterDirection.Output });
                 cmd.Parameters.AddWithValue("p_name", role.Name);
-                cmd.Parameters.AddWithValue("p_created_at", this.dateTimeService.UtcDateTime);
-                cmd.Parameters.AddWithValue("p_created_by", this.authenticatedUserService.UserId);
+                cmd.Parameters.AddWithValue("p_created_at", role.CreatedAt);
+                cmd.Parameters.AddWithValue("p_created_by", role.CreatedBy);
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var id = (int)cmd.Parameters["p_id"].Value;
                 connection.Close();

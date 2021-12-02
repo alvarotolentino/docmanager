@@ -17,14 +17,10 @@ namespace Infrastructure.Persistence.Repositories
     {
 
         private NpgsqlConnection connection;
-        private readonly IDateTimeService dateTimeService;
-        private readonly IAuthenticatedUserService authenticatedUserService;
 
-        public GroupRepositoryAsync(DbConnection dbConnection, IAuthenticatedUserService authenticatedUserService, IDateTimeService dateTimeService)
+        public GroupRepositoryAsync(DbConnection dbConnection)
         {
             this.connection = (NpgsqlConnection)dbConnection;
-            this.dateTimeService = dateTimeService;
-            this.authenticatedUserService = authenticatedUserService;
         }
 
         public async Task<int> CreateGroup(Group group, CancellationToken cancellationToken)
@@ -34,8 +30,8 @@ namespace Infrastructure.Persistence.Repositories
                 connection.Open();
                 cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = -1, Direction = ParameterDirection.InputOutput });
                 cmd.Parameters.AddWithValue("@p_name", parameterType: NpgsqlDbType.Varchar, group.Name);
-                cmd.Parameters.AddWithValue("@p_created_by", this.authenticatedUserService.UserId);
-                cmd.Parameters.AddWithValue("@p_created_at", this.dateTimeService.UtcDateTime);
+                cmd.Parameters.AddWithValue("@p_created_by", group.CreatedBy);
+                cmd.Parameters.AddWithValue("@p_created_at", group.CreatedAt);
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var value = (int)cmd.Parameters["@p_id"].Value;
                 connection.Close();
@@ -43,12 +39,12 @@ namespace Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<bool> DeleteGroup(int id, CancellationToken cancellationToken)
+        public async Task<bool> DeleteGroup(Group group, CancellationToken cancellationToken)
         {
             using (var cmd = new NpgsqlCommand("CALL \"usp_delete_group\" (@p_id)", connection))
             {
                 connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = id, Direction = ParameterDirection.InputOutput });
+                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = group.Id, Direction = ParameterDirection.InputOutput });
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var result = (int)cmd.Parameters["@p_id"].Value;
                 connection.Close();
@@ -64,8 +60,8 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.Add(new NpgsqlParameter("@p_result", DbType.Int32) { Value = -1, Direction = ParameterDirection.InputOutput });
                 cmd.Parameters.AddWithValue("@p_id", group.Id);
                 cmd.Parameters.AddWithValue("@p_name", group.Name);
-                cmd.Parameters.AddWithValue("@p_updated_by", this.authenticatedUserService.UserId);
-                cmd.Parameters.AddWithValue("@p_updated_at", this.dateTimeService.UtcDateTime);
+                cmd.Parameters.AddWithValue("@p_updated_by", group.UpdatedBy);
+                cmd.Parameters.AddWithValue("@p_updated_at", group.UpdatedAt);
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var result = (int)cmd.Parameters["@p_result"].Value;
                 connection.Close();

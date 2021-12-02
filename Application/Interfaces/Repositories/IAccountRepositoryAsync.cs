@@ -13,7 +13,7 @@ namespace Application.Interfaces.Repositories
 
         Task<User> AddUserToGroup(UserGroup userGroup, CancellationToken cancellationToken);
 
-        Task<User> AssignRole(int userId, int roleId, CancellationToken cancellationToken);
+        Task<User> AssignRole(UserRole userRole, CancellationToken cancellationToken);
 
         Task<User> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken);
         Task<IReadOnlyList<User>> GetAccounts(GetAllAccountsParameter filter, CancellationToken cancellationToken);

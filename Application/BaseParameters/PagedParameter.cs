@@ -2,19 +2,20 @@ namespace Application.BaseParameters
 {
     public class PagedParameter
     {
-        public int pagenumber { get; set; }
-        public int pagesize { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+
 
         public PagedParameter()
         {
-            this.pagenumber = 1;
-            this.pagesize = 10;
+            this.PageNumber = 1;
+            this.PageSize = 10;
         }
 
         public PagedParameter(int pageNumber, int pageSize)
         {
-            this.pagenumber = pageNumber < 1 ? 1 : pageNumber;
-            this.pagesize = pageSize > 10 ? 10 : pageSize;
+            this.PageNumber = pageNumber < 1 ? 1 : pageNumber;
+            this.PageSize = pageSize > 10 ? 10 : pageSize;
         }
     }
 }

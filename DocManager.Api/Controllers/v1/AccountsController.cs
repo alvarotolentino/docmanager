@@ -70,7 +70,7 @@ namespace DocManager.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAccounts([FromQuery] GetAllAccountsParameter pagination)
         {
-            return Ok(await Mediator.Send(new GetAllAccountsQuery { PageSize = pagination.pagesize, PageNumber = pagination.pagenumber }));
+            return Ok(await Mediator.Send(new GetAllAccountsQuery { PageSize = pagination.PageSize, PageNumber = pagination.PageNumber }));
         }
 
 

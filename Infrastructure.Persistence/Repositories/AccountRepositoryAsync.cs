@@ -17,16 +17,13 @@ namespace Infrastructure.Persistence.Repositories
     public class AccountRepositoryAsync : IAccountRepositoryAsync
     {
         private NpgsqlConnection connection;
-        private readonly IDateTimeService dateTimeService;
-        private readonly IAuthenticatedUserService authenticatedUserService;
+
 
         public AccountRepositoryAsync(DbConnection dbConnection,
         IAuthenticatedUserService authenticatedUserService,
         IDateTimeService dateTimeService)
         {
             this.connection = (NpgsqlConnection)dbConnection;
-            this.dateTimeService = dateTimeService;
-            this.authenticatedUserService = authenticatedUserService;
         }
         public async Task<User> AddUserToGroup(UserGroup userGroup, CancellationToken cancellationToken)
         {
@@ -55,15 +52,15 @@ namespace Infrastructure.Persistence.Repositories
             return user;
         }
 
-        public async Task<User> AssignRole(int userId, int roleId, CancellationToken cancellationToken)
+        public async Task<User> AssignRole(UserRole userRole, CancellationToken cancellationToken)
         {
             var user = new User() { Roles = new List<Role>() };
             using (var cmd = new NpgsqlCommand("udf_assig_role_to_user", connection))
             {
                 connection.Open();
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("p_userid", userId);
-                cmd.Parameters.AddWithValue("p_roleid", roleId);
+                cmd.Parameters.AddWithValue("p_userid", userRole.UserId);
+                cmd.Parameters.AddWithValue("p_roleid", userRole.RoleId);
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (reader.HasRows)
@@ -95,8 +92,8 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("p_email", user.Email);
                 cmd.Parameters.AddWithValue("p_normalized_email", user.Email.ToUpper());
                 cmd.Parameters.AddWithValue("p_password_hashed", user.PasswordHash);
-                cmd.Parameters.AddWithValue("p_created_at", this.dateTimeService.UtcDateTime);
-                cmd.Parameters.AddWithValue("p_created_by", this.authenticatedUserService.UserId);
+                cmd.Parameters.AddWithValue("p_created_at", user.CreatedAt);
+                cmd.Parameters.AddWithValue("p_created_by", user.CreatedBy);
 
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 connection.Close();
@@ -188,8 +185,8 @@ namespace Infrastructure.Persistence.Repositories
             {
                 connection.Open();
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("p_number", filter.pagenumber);
-                cmd.Parameters.AddWithValue("p_size", filter.pagesize);
+                cmd.Parameters.AddWithValue("p_number", filter.PageNumber);
+                cmd.Parameters.AddWithValue("p_size", filter.PageSize);
                 cmd.Prepare();
 
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
