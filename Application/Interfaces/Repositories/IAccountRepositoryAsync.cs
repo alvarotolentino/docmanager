@@ -15,7 +15,7 @@ namespace Application.Interfaces.Repositories
 
         Task<User> AssignRole(UserRole userRole, CancellationToken cancellationToken);
 
-        Task<User> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken);
+        Task<User> FindByEmailAsync(User user, CancellationToken cancellationToken);
         Task<IReadOnlyList<User>> GetAccounts(GetAllAccountsParameter filter, CancellationToken cancellationToken);
     }
 }

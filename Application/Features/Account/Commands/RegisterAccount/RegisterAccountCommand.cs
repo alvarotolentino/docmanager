@@ -59,6 +59,8 @@ namespace Application.Features.Account.Commands.RegisterAccount
                 LastName = request.LastName,
                 UserName = request.UserName,
                 Email = request.Email,
+                NormalizedUserName = request.UserName.ToUpper(),
+                NormalizedEmail = request.Email.ToUpper(),
                 CreatedBy = this.authenticatedUserService.UserId.Value,
                 CreatedAt = this.dateTimeService.UtcDateTime
             };

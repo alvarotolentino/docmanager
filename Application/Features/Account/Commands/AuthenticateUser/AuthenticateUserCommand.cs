@@ -22,9 +22,9 @@ namespace Application.Features.Account.Commands.AuthenticateUser
 {
     public class AuthenticateUser : IRequest<Response<AuthenticationUserViewModel>>
     {
-        public string email { get; set; }
-        public string password { get; set; }
-        public string ipaddress { get; set; }
+        public string Email { get; set; }
+        public string Password { get; set; }
+        public string IpAddress { get; set; }
 
     }
 
@@ -49,22 +49,22 @@ namespace Application.Features.Account.Commands.AuthenticateUser
         }
         public async Task<Response<AuthenticationUserViewModel>> Handle(AuthenticateUser request, CancellationToken cancellationToken)
         {
-            var user = await this.accountRepository.FindByEmailAsync(request.email, cancellationToken);
+            var user = await this.accountRepository.FindByEmailAsync(new User { Email = request.Email }, cancellationToken);
             if (user == null)
             {
-                throw new ApiException(ERRORTITLE, $"No Accounts Registered with {request.email}.");
+                throw new ApiException(ERRORTITLE, $"No Accounts Registered with {request.Email}.");
             }
 
-            var result = this.passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.password);
+            var result = this.passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
             if (result != PasswordVerificationResult.Success)
             {
-                throw new ApiException(ERRORTITLE, $"Invalid Credentials for '{request.email}'.");
+                throw new ApiException(ERRORTITLE, $"Invalid Credentials for '{request.Email}'.");
             }
 
-            JwtSecurityToken jwtSecurityToken = GetJWToken(user, request.ipaddress);
+            JwtSecurityToken jwtSecurityToken = GetJWToken(user, request.IpAddress);
             AuthenticationUserViewModel response = new AuthenticationUserViewModel();
             response.JWToken = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
-            var refreshToken = GetRefreshToken(request.ipaddress);
+            var refreshToken = GetRefreshToken(request.IpAddress);
             response.RefreshToken = refreshToken.Token;
             return new Response<AuthenticationUserViewModel>(response, $"Authenticated {user.UserName}");
 

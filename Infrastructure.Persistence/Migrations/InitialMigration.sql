@@ -10,8 +10,7 @@ begin
         category character varying not null,
         content_type character varying not null,
         length bigint not null,
-        data bytea not null,
-        document_ref integer not null,
+        external_id integer not null,
         created_by integer null,
         created_at timestamp without time zone null,
         updated_by integer null,
@@ -138,7 +137,7 @@ begin
     raise info 'Starting creating functions and procedures';
 
     CREATE OR REPLACE FUNCTION udf_delete_document_metadata(p_id integer = NULL)
-    RETURNS TABLE (id integer, name character varying, document_ref integer)
+    RETURNS TABLE (id integer, name character varying, external_id integer)
     AS $BODY$
     BEGIN
         RETURN QUERY
@@ -146,7 +145,7 @@ begin
             DELETE FROM "document" doc 
             WHERE doc.id = p_id
             RETURNING *
-        ) SELECT dd.id, dd.name, dd.document_ref 
+        ) SELECT dd.id, dd.name, dd.external_id 
         FROM delete_document dd ;
     END
     $BODY$
@@ -220,7 +219,7 @@ begin
 	CREATE OR REPLACE FUNCTION udf_get_document_data_by_id(
     p_documentid integer = NULL, p_userid integer = NULL
     )
-    RETURNS TABLE (name character varying, content_type character varying, length bigint, document_ref integer) 
+    RETURNS TABLE (name character varying, content_type character varying, length bigint, external_id integer) 
     AS
     $BODY$
     BEGIN
@@ -237,7 +236,7 @@ begin
             INNER JOIN document_group_permission dgp ON doc.id = dgp.document_id
             INNER JOIN user_group ug ON dgp.group_id = ug.group_id
             WHERE doc.id = p_documentid AND ug.user_id = p_userid
-        ) SELECT doc.name, doc.content_type, doc.length, doc.document_ref
+        ) SELECT doc.name, doc.content_type, doc.length, doc.external_id
         FROM "document" doc
         WHERE doc.id = COALESCE((SELECT id FROM document_by_user LIMIT 1), (SELECT id FROM document_by_group LIMIT 1));
     END
@@ -312,14 +311,18 @@ begin
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_add_user_to_group(
-    p_userid integer = NULL, p_groupid integer = NULL
+    p_user_id integer = NULL, p_group_id integer = NULL
     )
     RETURNS TABLE (id integer, group_id integer, user_name character varying, name character varying) 
     AS
     $BODY$
     BEGIN
+
 		INSERT INTO user_group (user_id, group_id)
-        VALUES (p_userid, p_groupid)
+        SELECT val.user_id, val.group_id
+        FROM (VALUES (p_user_id, p_group_id)) val (user_id, group_id)
+        JOIN "user" u ON val.user_id = u.id
+        JOIN "group" g ON val.group_id = g.id
         ON CONFLICT ON CONSTRAINT "pk_user_group" DO NOTHING;
 
         RETURN QUERY
@@ -327,7 +330,7 @@ begin
         FROM "user" u
 		INNER JOIN user_group ug ON u.id = ug.user_id
 		INNER JOIN "group" gr ON ug.group_id = gr.id
-        WHERE u.id = p_userid AND gr.id = p_groupid;
+        WHERE u.id = p_user_id AND gr.id = p_group_id;
     END
     $BODY$
     LANGUAGE plpgsql;
@@ -347,12 +350,12 @@ begin
     $BODY$
     LANGUAGE plpgsql;
 
-    CREATE OR REPLACE PROCEDURE usp_insert_document_metadata(p_id INOUT integer = NULL,p_name character varying = NULL,p_description character varying = NULL,p_dategory character varying = NULL,p_content_type character varying = NULL,p_length bigint = NULL,p_document_ref integer = NULL,p_created_at timestamp with time zone = NULL,p_created_by integer = NULL)
+    CREATE OR REPLACE PROCEDURE usp_insert_document_metadata(p_id INOUT integer = NULL,p_name character varying = NULL,p_description character varying = NULL,p_dategory character varying = NULL,p_content_type character varying = NULL,p_length bigint = NULL,p_external_id integer = NULL,p_created_at timestamp with time zone = NULL,p_created_by integer = NULL)
     AS $BODY$
     BEGIN
         WITH save_document AS (
-            INSERT INTO "document" (name,description,category,content_type,length,document_ref,created_by,created_at,updated_by,updated_at) VALUES
-		    (p_name,p_description,p_dategory,p_content_type,p_length,p_document_ref,p_created_by,p_created_at,p_created_by,p_created_at) RETURNING "id"
+            INSERT INTO "document" (name,description,category,content_type,length,external_id,created_by,created_at,updated_by,updated_at) VALUES
+		    (p_name,p_description,p_dategory,p_content_type,p_length,p_external_id,p_created_by,p_created_at,p_created_by,p_created_at) RETURNING "id"
         )
         INSERT INTO document_user_permission (user_id, document_id)
         SELECT p_created_by, (SELECT id FROM save_document)
@@ -382,15 +385,18 @@ begin
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_assig_role_to_user(
-    p_userid integer = NULL, p_roleid integer = NULL
+    p_user_id integer = NULL, p_role_id integer = NULL
     )
     RETURNS TABLE (id integer, role_id integer, user_name character varying, name character varying) 
     AS
     $BODY$
     BEGIN
 
-		INSERT INTO user_role
-        VALUES (p_userid, p_roleid)
+		INSERT INTO user_role (user_id, role_id)
+        SELECT val.user_id, val.role_id
+        FROM (VALUES (p_user_id, p_role_id)) val (user_id, role_id)
+        JOIN "user" u ON val.user_id = u.id
+        JOIN "role" r ON val.role_id = r.id
         ON CONFLICT ON CONSTRAINT pk_user_role DO NOTHING;
 		
         RETURN QUERY
@@ -398,7 +404,7 @@ begin
         FROM "user" u
 		INNER JOIN user_role ur ON u.id = ur.user_id
 		INNER JOIN "role" r ON ur.role_id = r.id
-        WHERE u.id = p_userid AND r.id = p_roleid;
+        WHERE u.id = p_user_id AND r.id = p_role_id;
     END
     $BODY$
     LANGUAGE plpgsql;
@@ -411,7 +417,7 @@ begin
         p_normalized_user_name character varying = NULL, 
         p_email character varying = NULL, 
         p_normalized_email character varying = NULL,
-        p_password_hashed text = NULL,
+        p_password_hash character varying = NULL,
         p_created_by integer = NULL,
         p_created_at timestamp with time zone = NULL
     )
@@ -420,7 +426,7 @@ begin
     BEGIN
         WITH new_user AS (
             INSERT INTO "user"(first_name,last_name,user_name,normalized_user_name,email,normalized_email, password_hash, created_by, created_at)
-            VALUES (p_first_name, p_last_name, p_user_name, p_normalized_user_name, p_email, p_normalized_email, p_password_hashed, p_created_by, p_created_at)
+            VALUES (p_first_name, p_last_name, p_user_name, p_normalized_user_name, p_email, p_normalized_email, p_password_hash, p_created_by, p_created_at)
             ON CONFLICT (email) DO NOTHING
             RETURNING id
         ), new_user_default_role AS (

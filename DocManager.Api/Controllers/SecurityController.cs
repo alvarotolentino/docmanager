@@ -28,9 +28,9 @@ namespace DocManager.Api.Controllers
         {
             var response = await Mediator.Send(new AuthenticateUser
             {
-                email = request.Email,
-                password = request.Password,
-                ipaddress = GetIPAddress()
+                Email = request.Email,
+                Password = request.Password,
+                IpAddress = GetIPAddress()
             });
             if (response.Succeeded)
                 return Ok(response);

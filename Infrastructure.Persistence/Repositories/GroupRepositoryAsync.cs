@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Domain.Entities;
-using Infrastructure.Persistence.Connections;
+using Infrastructure.Persistence.Database;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -33,6 +33,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("@p_name", parameterType: NpgsqlDbType.Varchar, group.Name);
                 cmd.Parameters.AddWithValue("@p_created_by", group.CreatedBy);
                 cmd.Parameters.AddWithValue("@p_created_at", group.CreatedAt);
+                cmd.Prepare();
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var value = (int)cmd.Parameters["@p_id"].Value;
                 connection.Close();
@@ -46,6 +47,7 @@ namespace Infrastructure.Persistence.Repositories
             {
                 connection.Open();
                 cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = group.Id, Direction = ParameterDirection.InputOutput });
+                cmd.Prepare();
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var result = (int)cmd.Parameters["@p_id"].Value;
                 connection.Close();
@@ -55,7 +57,12 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<Group> Update(Group group, CancellationToken cancellationToken)
         {
-            using (var cmd = new NpgsqlCommand("CALL \"usp_update_group\" (@p_result, @p_id, @p_name, @p_updated_by, @p_updated_at)", connection))
+            var dbManager = new DbManager(connection);
+            var sp = "CALL \"usp_update_group\" (@p_result, @p_id, @p_name, @p_updated_by, @p_updated_at)";
+            var result = await dbManager.ExecuteNonQueryAsync<dynamic>(sp, cancellationToken, group, new { Result = -1 });
+            
+
+            using (var cmd = new NpgsqlCommand(, connection))
             {
                 connection.Open();
                 cmd.Parameters.Add(new NpgsqlParameter("@p_result", DbType.Int32) { Value = -1, Direction = ParameterDirection.InputOutput });
@@ -63,6 +70,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("@p_name", group.Name);
                 cmd.Parameters.AddWithValue("@p_updated_by", group.UpdatedBy);
                 cmd.Parameters.AddWithValue("@p_updated_at", group.UpdatedAt);
+                cmd.Prepare();
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var result = (int)cmd.Parameters["@p_result"].Value;
                 connection.Close();
@@ -72,66 +80,22 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<Group> GetById(int id, CancellationToken cancellationToken)
         {
-            using (var cmd = new NpgsqlCommand("udf_get_group_by_id", connection))
-            {
-                connection.Open();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("p_id", id);
-                cmd.Prepare();
-                Group group = null;
-                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
-                {
-                    if (reader.HasRows)
-                    {
-                        reader.Read();
-                        group = new Group();
-                        group.Id = (int)reader["id"];
-                        group.Name = reader["name"].ToString();
-                        group.CreatedBy = (int)reader["created_by"];
-                        group.CreatedAt = (DateTime)reader["created_at"];
-                        group.UpdatedBy = (int)reader["updated_by"];
-                        group.UpdatedAt = (DateTime)reader["updated_at"];
-
-                    }
-                }
-                connection.Close();
-                return group;
-            }
+            using var dbManager = new DbManager(connection);
+            var result = await dbManager.ExecuteReaderAsync<Group>("udf_get_group_by_id", cancellationToken, inputParam: new { Id = id }, commandType: CommandType.StoredProcedure);
+            return result;
         }
 
         public async Task<IReadOnlyList<Group>> GetGroups(int pageNumber, int pageSize, CancellationToken cancellationToken)
         {
-            using (var cmd = new NpgsqlCommand("udf_get_groups_by_page_number_size", connection))
-            {
-                connection.Open();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("p_number", pageNumber);
-                cmd.Parameters.AddWithValue("p_size", pageSize);
-                cmd.Prepare();
-                List<Group> groups = null;
-                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
-                {
-                    if (reader.HasRows)
-                    {
-                        groups = new List<Group>();
-                        while (reader.Read())
-                        {
-                            var group = new Group
-                            {
-                                Id = (int)reader["id"],
-                                Name = reader["name"].ToString(),
-                                CreatedBy = (int)reader["created_by"],
-                                CreatedAt = (DateTime)reader["created_at"],
-                                UpdatedBy = (int)reader["updated_by"],
-                                UpdatedAt = (DateTime)reader["updated_at"],
-                            };
-                            groups.Add(group);
-                        }
-                    }
-                }
-                connection.Close();
-                return groups;
-            }
+
+            using var dbManager = new DbManager(connection);
+            var result = await dbManager.ExecuteReaderAsListAsync<Group>("udf_get_groups_by_page_number_size",
+            cancellationToken,
+            inputParam: new { Number = pageNumber, Size = pageSize },
+            commandType: CommandType.StoredProcedure
+            );
+            return result.ToList();
+
         }
 
         public void Dispose()

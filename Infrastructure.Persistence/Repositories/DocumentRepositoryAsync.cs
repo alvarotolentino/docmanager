@@ -11,7 +11,7 @@ using Application.Interfaces.Services;
 using Application.Interfaces.Repositories;
 using System.Threading;
 using Application.Features.Documents.Queries.GetAllDocuments;
-using Infrastructure.Persistence.Connections;
+using Infrastructure.Persistence.Database;
 using System.Transactions;
 
 namespace Infrastructure.Persistence.Repositories
@@ -29,29 +29,37 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<bool> DeleteDocumentById(Document document, CancellationToken cancellationToken)
         {
-            int documentRef = -1;
-            using (var cmd = new NpgsqlCommand("udf_delete_document_metadata", metadataConnection))
-            {
-                metadataConnection.Open();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("p_id", document.Id);
+            var documentId = -1;
+            var externalId = -1;
 
-                var reader = await cmd.ExecuteReaderAsync(cancellationToken);
-                if (!reader.HasRows) return false;
-                reader.Read();
-                documentRef = (int)reader["document_ref"];
-                if (documentRef == -1) return false;
-            }
-            using (var cmd = new NpgsqlCommand("CALL \"udf_delete_document_data\" (@p_id)", dataConnection))
+            await metadataConnection.OpenAsync();
+            using (var cmdDeleteMetadata = new NpgsqlCommand("udf_delete_document_metadata", metadataConnection))
             {
-                dataConnection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = documentRef, Direction = ParameterDirection.InputOutput });
-                await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var id = (int)cmd.Parameters["@p_id"].Value;
-                dataConnection.Close();
+                cmdDeleteMetadata.CommandType = CommandType.StoredProcedure;
+                cmdDeleteMetadata.Parameters.AddWithValue("p_id", document.Id);
+                cmdDeleteMetadata.Prepare();
 
-                return id > -1 ? true : false;
+                using (var reader = await cmdDeleteMetadata.ExecuteReaderAsync(cancellationToken))
+                {
+                    if (!reader.HasRows) return false;
+                    reader.Read();
+                    externalId = (int)reader["external_id"];
+                }
             }
+            await metadataConnection.CloseAsync();
+            if (externalId == -1) return false;
+
+            await dataConnection.OpenAsync();
+            using (var cmdDeleteData = new NpgsqlCommand("CALL \"udf_delete_document_data\" (@p_id)", dataConnection))
+            {
+                cmdDeleteData.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = externalId, Direction = ParameterDirection.InputOutput });
+                cmdDeleteData.Prepare();
+                await cmdDeleteData.ExecuteNonQueryAsync();
+                documentId = (int)cmdDeleteData.Parameters["@p_id"].Value;
+            }
+            await dataConnection.CloseAsync();
+
+            return documentId > -1 ? true : false;
         }
 
         public async Task<Document> GetDocumentDataById(UserDocument userDocument, CancellationToken cancellationToken)
@@ -59,11 +67,11 @@ namespace Infrastructure.Persistence.Repositories
             Document document = null;
             using (var cmd = new NpgsqlCommand("udf_get_document_data_by_id", metadataConnection))
             {
-                metadataConnection.Open();
+                await metadataConnection.OpenAsync(cancellationToken);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("p_documentid", userDocument.DocumentId);
                 cmd.Parameters.AddWithValue("p_userid", userDocument.UserId);
-                cmd.Prepare();
+                await cmd.PrepareAsync(cancellationToken);
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (!reader.HasRows)
@@ -74,18 +82,20 @@ namespace Infrastructure.Persistence.Repositories
                     document.Name = reader["name"].ToString();
                     document.ContentType = reader["content_type"].ToString();
                     document.Length = (long)reader["length"];
-                    document.DocumentRef = (int)reader["document_ref"];
+                    document.ExternalId = (int)reader["external_id"];
 
                 }
-                metadataConnection.Close();
+                await metadataConnection.CloseAsync();
             }
-            if (document == null || document.DocumentRef <= 0)
+            if (document == null || document.ExternalId <= 0)
                 return null;
+
             using (var cmd = new NpgsqlCommand("udf_get_document_data_by_id", dataConnection))
             {
-                dataConnection.Open();
+                await dataConnection.OpenAsync(cancellationToken);
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("p_documentid", document.DocumentRef);
+                cmd.Parameters.AddWithValue("p_documentid", document.ExternalId);
+                await cmd.PrepareAsync(cancellationToken);
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (!reader.HasRows)
@@ -95,7 +105,7 @@ namespace Infrastructure.Persistence.Repositories
                     document.Data = (byte[])reader["data"];
 
                 }
-                dataConnection.Close();
+                await dataConnection.CloseAsync();
             }
 
             return document.Data != null ? document : null;
@@ -103,35 +113,9 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<Document> GetDocumentInfoById(UserDocument userDocument, CancellationToken cancellationToken)
         {
-            using (var cmd = new NpgsqlCommand("udf_get_document_info_by_id", metadataConnection))
-            {
-                metadataConnection.Open();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("p_documentid", userDocument.DocumentId);
-                cmd.Parameters.AddWithValue("p_userid", userDocument.UserId);
-                cmd.Prepare();
-                Document document = null;
-                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
-                {
-                    if (reader.HasRows)
-                    {
-                        reader.Read();
-                        document = new Document();
-                        document.Id = (int)reader["id"];
-                        document.Name = reader["name"].ToString();
-                        document.Description = reader["description"].ToString();
-                        document.Category = reader["category"].ToString();
-                        document.ContentType = reader["content_type"].ToString();
-                        document.Length = (long)reader["length"];
-                        document.CreatedBy = (int)reader["created_by"];
-                        document.CreatedAt = (DateTime)reader["created_at"];
-                        document.UpdatedBy = (int)reader["updated_by"];
-                        document.UpdatedAt = (DateTime)reader["updated_at"];
-                    }
-                }
-                metadataConnection.Close();
-                return document;
-            }
+            using var dbManager = new DbManager(this.metadataConnection);
+            var result = await dbManager.ExecuteReaderAsync<Document>("udf_get_document_info_by_id", cancellationToken, inputParam: userDocument, commandType: CommandType.StoredProcedure);
+            return result;
         }
 
         public async Task<IReadOnlyList<Document>> GetDocuments(GetUserDocumentsPaginated userDocumentsPaginated, CancellationToken cancellationToken)
@@ -180,49 +164,36 @@ namespace Infrastructure.Persistence.Repositories
         {
             using (var cmd = new NpgsqlCommand("CALL \"usp_insert_document_data\" (@p_id, @p_data)", dataConnection))
             {
-                dataConnection.Open();
+                await dataConnection.OpenAsync(cancellationToken);
                 cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = -1, Direction = ParameterDirection.InputOutput });
                 cmd.Parameters.AddWithValue("@p_data", document.Data);
-                cmd.Prepare();
+                await cmd.PrepareAsync(cancellationToken);
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var id = (int)cmd.Parameters["@p_id"].Value;
-                dataConnection.Close();
+                await dataConnection.CloseAsync();
                 if (id == -1) return id;
-                document.DocumentRef = id;
+                document.ExternalId = id;
             }
 
-            using (var cmd = new NpgsqlCommand("CALL \"usp_insert_document_metadata\" (@p_id, @p_name, @p_description, @p_dategory, @p_content_type, @p_length, @p_document_ref, @p_created_at, @p_created_by)", metadataConnection))
+            using (var cmd = new NpgsqlCommand("CALL \"usp_insert_document_metadata\" (@p_id, @p_name, @p_description, @p_dategory, @p_content_type, @p_length, @p_external_id, @p_created_at, @p_created_by)", metadataConnection))
             {
-                metadataConnection.Open();
+                await metadataConnection.OpenAsync(cancellationToken);
                 cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = -1, Direction = ParameterDirection.InputOutput });
                 cmd.Parameters.AddWithValue("@p_name", document.Name);
                 cmd.Parameters.AddWithValue("@p_description", document.Description);
                 cmd.Parameters.AddWithValue("@p_dategory", document.Category);
                 cmd.Parameters.AddWithValue("@p_content_type", document.ContentType);
                 cmd.Parameters.AddWithValue("@p_length", document.Length);
-                cmd.Parameters.AddWithValue("@p_document_ref", document.DocumentRef);
+                cmd.Parameters.AddWithValue("@p_external_id", document.ExternalId);
                 cmd.Parameters.AddWithValue("@p_created_at", document.CreatedAt);
                 cmd.Parameters.AddWithValue("@p_created_by", document.CreatedBy);
-                cmd.Prepare();
+                await cmd.PrepareAsync(cancellationToken);
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var id = (int)cmd.Parameters["@p_id"].Value;
-                metadataConnection.Close();
+                await metadataConnection.CloseAsync();
                 return id;
             }
 
-        }
-
-        public void Dispose()
-        {
-            if (this.dataConnection != null && this.dataConnection.State == ConnectionState.Open)
-            {
-                this.dataConnection.Close();
-            }
-
-            if (this.metadataConnection != null && this.metadataConnection.State == ConnectionState.Open)
-            {
-                this.metadataConnection.Close();
-            }
         }
 
         public async Task<UserDocument> AssingUserPermissionAsync(UserDocument userDocument, CancellationToken cancellationToken)
@@ -233,6 +204,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("p_userid", userDocument.UserId);
                 cmd.Parameters.AddWithValue("p_documentid", userDocument.DocumentId);
+                cmd.Prepare();
 
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
@@ -256,6 +228,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("p_groupid", groupDocument.GroupId);
                 cmd.Parameters.AddWithValue("p_documentid", groupDocument.DocumentId);
+                cmd.Prepare();
 
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
@@ -268,6 +241,19 @@ namespace Infrastructure.Persistence.Repositories
                     }
                     return null;
                 }
+            }
+        }
+
+        public void Dispose()
+        {
+            if (this.dataConnection != null && this.dataConnection.State == ConnectionState.Open)
+            {
+                this.dataConnection.Close();
+            }
+
+            if (this.metadataConnection != null && this.metadataConnection.State == ConnectionState.Open)
+            {
+                this.metadataConnection.Close();
             }
         }
     }

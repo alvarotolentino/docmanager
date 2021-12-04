@@ -11,7 +11,7 @@ namespace Domain.Entities
         public string ContentType { get; set; }
         public long Length { get; set; }
         public byte[] Data { get; set; }
-        public int DocumentRef { get; set; }
+        public int ExternalId { get; set; }
 
     }
 }

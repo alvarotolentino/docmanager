@@ -28,6 +28,7 @@ namespace Application.Features.Account.Commands.AddUserGroup
         {
             var userGroup = this.mapper.Map<UserGroup>(request);
             var result = await this.accountRepository.AddUserToGroup(userGroup, cancellationToken);
+            if (result == null) return new Response<AddUserGroupViewModel>(null, "User or group not found.", succeeded: false);
             var addUserGroupViewModel = this.mapper.Map<AddUserGroupViewModel>(result);
             return new Response<AddUserGroupViewModel>(addUserGroupViewModel);
         }

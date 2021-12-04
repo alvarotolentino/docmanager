@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Domain.Entities;
-using Infrastructure.Persistence.Connections;
+using Infrastructure.Persistence.Database;
 using Microsoft.AspNetCore.Identity;
 using Npgsql;
 
@@ -28,6 +28,7 @@ namespace Infrastructure.Persistence.Repositories
                 cmd.Parameters.AddWithValue("p_name", role.Name);
                 cmd.Parameters.AddWithValue("p_created_at", role.CreatedAt);
                 cmd.Parameters.AddWithValue("p_created_by", role.CreatedBy);
+                cmd.Prepare();
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var id = (int)cmd.Parameters["p_id"].Value;
                 connection.Close();
@@ -42,6 +43,7 @@ namespace Infrastructure.Persistence.Repositories
             {
                 connection.Open();
                 cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = role.Id, Direction = ParameterDirection.InputOutput });
+                cmd.Prepare();
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
                 var result = (int)cmd.Parameters["@p_id"].Value;
                 connection.Close();

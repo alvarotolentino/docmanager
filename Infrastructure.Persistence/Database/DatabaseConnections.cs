@@ -1,6 +1,6 @@
 using Npgsql;
 
-namespace Infrastructure.Persistence.Connections
+namespace Infrastructure.Persistence.Database
 {
     public class DatabaseConnections
     {

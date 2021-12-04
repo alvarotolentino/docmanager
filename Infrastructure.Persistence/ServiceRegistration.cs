@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.Http;
 using Npgsql;
 using System.Data.Common;
 using Domain.Entities;
-using Infrastructure.Persistence.Connections;
+using Infrastructure.Persistence.Database;
 
 namespace Infrastructure.Persistence
 {
