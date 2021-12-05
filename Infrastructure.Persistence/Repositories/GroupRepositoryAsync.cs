@@ -26,56 +26,37 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<int> CreateGroup(Group group, CancellationToken cancellationToken)
         {
-            using (var cmd = new NpgsqlCommand("CALL \"usp_insert_group\" (@p_id, @p_name, @p_created_by, @p_created_at)", connection))
-            {
-                connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = -1, Direction = ParameterDirection.InputOutput });
-                cmd.Parameters.AddWithValue("@p_name", parameterType: NpgsqlDbType.Varchar, group.Name);
-                cmd.Parameters.AddWithValue("@p_created_by", group.CreatedBy);
-                cmd.Parameters.AddWithValue("@p_created_at", group.CreatedAt);
-                cmd.Prepare();
-                await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var value = (int)cmd.Parameters["@p_id"].Value;
-                connection.Close();
-                return value;
-            }
+            using var dbManager = new DbManager(connection);
+            var sp = "CALL \"usp_insert_group\" (@p_id, @p_name, @p_created_by, @p_created_at)";
+            var dyn = await dbManager.ExecuteNonQueryAsync<dynamic>(sp, cancellationToken, group, new { Id = -1 });
+            if (dyn == null) return await Task.FromResult(0);
+            var keyValue = dyn as IDictionary<string, object>;
+            return (int)keyValue["Id"];
         }
 
         public async Task<bool> DeleteGroup(Group group, CancellationToken cancellationToken)
         {
-            using (var cmd = new NpgsqlCommand("CALL \"usp_delete_group\" (@p_id)", connection))
-            {
-                connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = group.Id, Direction = ParameterDirection.InputOutput });
-                cmd.Prepare();
-                await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var result = (int)cmd.Parameters["@p_id"].Value;
-                connection.Close();
-                return result > -1;
-            }
+            using var dbManager = new DbManager(connection);
+            var sp = "CALL \"usp_delete_group\" (@p_id)";
+            var dyn = await dbManager.ExecuteNonQueryAsync<dynamic>(sp, cancellationToken, group, new { Id = -1 });
+            if (dyn == null) return false;
+            var keyValue = dyn as IDictionary<string, object>;
+            var id = (int)keyValue["Id"];
+            return id > -1;
         }
 
         public async Task<Group> Update(Group group, CancellationToken cancellationToken)
         {
-            var dbManager = new DbManager(connection);
+            using var dbManager = new DbManager(connection);
             var sp = "CALL \"usp_update_group\" (@p_result, @p_id, @p_name, @p_updated_by, @p_updated_at)";
-            var result = await dbManager.ExecuteNonQueryAsync<dynamic>(sp, cancellationToken, group, new { Result = -1 });
-            
+            var dyn = await dbManager.ExecuteNonQueryAsync<dynamic>(sp, cancellationToken, group, outpuParam: new { Result = -1 });
+            if (dyn == null) return null;
 
-            using (var cmd = new NpgsqlCommand(, connection))
-            {
-                connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("@p_result", DbType.Int32) { Value = -1, Direction = ParameterDirection.InputOutput });
-                cmd.Parameters.AddWithValue("@p_id", group.Id);
-                cmd.Parameters.AddWithValue("@p_name", group.Name);
-                cmd.Parameters.AddWithValue("@p_updated_by", group.UpdatedBy);
-                cmd.Parameters.AddWithValue("@p_updated_at", group.UpdatedAt);
-                cmd.Prepare();
-                await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var result = (int)cmd.Parameters["@p_result"].Value;
-                connection.Close();
-                return result > -1 ? new Group { Id = group.Id, Name = group.Name } : null;
-            }
+            var groupUpdated = new Group() { Id = group.Id, Name = group.Name };
+            var keyValue = dyn as IDictionary<string, object>;
+            var result = (int)keyValue["Result"];
+            return result == -1 ? null : groupUpdated;
+
         }
 
         public async Task<Group> GetById(int id, CancellationToken cancellationToken)
@@ -94,7 +75,7 @@ namespace Infrastructure.Persistence.Repositories
             inputParam: new { Number = pageNumber, Size = pageSize },
             commandType: CommandType.StoredProcedure
             );
-            return result.ToList();
+            return result != null ? result.ToList() : null;
 
         }
 

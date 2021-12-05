@@ -151,7 +151,7 @@ begin
     $BODY$
     LANGUAGE plpgsql;
 
-	CREATE OR REPLACE FUNCTION udf_get_documents_by_page_number_size(p_number INTEGER = NULL,  p_size INTEGER = NULL, p_userid integer = NULL)
+	CREATE OR REPLACE FUNCTION udf_get_documents_by_page_number_size(p_number INTEGER = NULL,  p_size INTEGER = NULL, p_user_id integer = NULL)
     RETURNS TABLE (id integer, name character varying, description character varying, category character varying, content_type character varying, length bigint, created_by integer, created_at timestamp, updated_by integer, updated_at timestamp) 
     AS
     $BODY$
@@ -167,14 +167,14 @@ begin
         		doc.name, doc.description, doc.category, doc.content_type, doc.length, doc.created_by, doc.created_at, doc.updated_by, doc.updated_at
             FROM "document" doc
             INNER JOIN document_user_permission dup ON doc.id = dup.document_id
-            WHERE dup.user_id = p_userid
+            WHERE dup.user_id = p_user_id
         ), document_by_group AS (
             SELECT doc.id,
         		doc.name, doc.description, doc.category, doc.content_type, doc.length, doc.created_by, doc.created_at, doc.updated_by, doc.updated_at
             FROM "document" doc
             INNER JOIN document_group_permission dgp ON doc.id = dgp.document_id
             INNER JOIN user_group ug ON dgp.group_id = ug.group_id
-            WHERE ug.user_id = p_userid AND doc.id NOT IN (
+            WHERE ug.user_id = p_user_id AND doc.id NOT IN (
 				SELECT dbu.id FROM document_by_user dbu
 			)
         ) 
@@ -189,7 +189,7 @@ begin
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_get_document_info_by_id(
-    p_documentid integer = NULL, p_userid integer = NULL
+    p_document_id integer = NULL, p_user_id integer = NULL
     )
     RETURNS TABLE (id integer, name character varying, description character varying, category character varying, content_type character varying, length bigint, created_by integer, created_at timestamp, updated_by integer, updated_at timestamp) 
     AS
@@ -201,13 +201,13 @@ begin
             SELECT doc.id
             FROM "document" doc
             INNER JOIN document_user_permission dup ON doc.id = dup.document_id
-            WHERE doc.id = p_documentid AND dup.user_id = p_userid
+            WHERE doc.id = p_document_id AND dup.user_id = p_user_id
         ), document_by_group AS (
             SELECT doc.id
             FROM "document" doc
             INNER JOIN document_group_permission dgp ON doc.id = dgp.document_id
             INNER JOIN user_group ug ON dgp.group_id = ug.group_id
-            WHERE doc.id = p_documentid AND ug.user_id = p_userid
+            WHERE doc.id = p_document_id AND ug.user_id = p_user_id
         ) SELECT doc.id, doc.name, doc.description, doc.category, doc.content_type, doc.length, doc.created_by, doc.created_at, doc.updated_by, doc.updated_at
         FROM "document" doc
         WHERE doc.id = COALESCE((SELECT du.id FROM document_by_user du LIMIT 1), (SELECT dg.id FROM document_by_group dg LIMIT 1));
@@ -217,7 +217,7 @@ begin
     LANGUAGE plpgsql;
 
 	CREATE OR REPLACE FUNCTION udf_get_document_data_by_id(
-    p_documentid integer = NULL, p_userid integer = NULL
+    p_document_id integer = NULL, p_user_id integer = NULL
     )
     RETURNS TABLE (name character varying, content_type character varying, length bigint, external_id integer) 
     AS
@@ -229,13 +229,13 @@ begin
             SELECT doc.id
             FROM "document" doc
             INNER JOIN document_user_permission dup ON doc.id = dup.document_id
-            WHERE doc.id = p_documentid AND dup.user_id = p_userid
+            WHERE doc.id = p_document_id AND dup.user_id = p_user_id
         ), document_by_group AS (
             SELECT doc.id
             FROM "document" doc
             INNER JOIN document_group_permission dgp ON doc.id = dgp.document_id
             INNER JOIN user_group ug ON dgp.group_id = ug.group_id
-            WHERE doc.id = p_documentid AND ug.user_id = p_userid
+            WHERE doc.id = p_document_id AND ug.user_id = p_user_id
         ) SELECT doc.name, doc.content_type, doc.length, doc.external_id
         FROM "document" doc
         WHERE doc.id = COALESCE((SELECT id FROM document_by_user LIMIT 1), (SELECT id FROM document_by_group LIMIT 1));
@@ -350,16 +350,19 @@ begin
     $BODY$
     LANGUAGE plpgsql;
 
-    CREATE OR REPLACE PROCEDURE usp_insert_document_metadata(p_id INOUT integer = NULL,p_name character varying = NULL,p_description character varying = NULL,p_dategory character varying = NULL,p_content_type character varying = NULL,p_length bigint = NULL,p_external_id integer = NULL,p_created_at timestamp with time zone = NULL,p_created_by integer = NULL)
+    CREATE OR REPLACE PROCEDURE usp_insert_document_metadata(p_id INOUT integer = NULL,p_name character varying = NULL,p_description character varying = NULL,p_category character varying = NULL,p_content_type character varying = NULL,p_length bigint = NULL,p_external_id integer = NULL,p_created_at timestamp with time zone = NULL,p_created_by integer = NULL)
     AS $BODY$
     BEGIN
         WITH save_document AS (
             INSERT INTO "document" (name,description,category,content_type,length,external_id,created_by,created_at,updated_by,updated_at) VALUES
-		    (p_name,p_description,p_dategory,p_content_type,p_length,p_external_id,p_created_by,p_created_at,p_created_by,p_created_at) RETURNING "id"
-        )
-        INSERT INTO document_user_permission (user_id, document_id)
-        SELECT p_created_by, (SELECT id FROM save_document)
-        RETURNING document_id INTO p_id;
+		    (p_name,p_description,p_category,p_content_type,p_length,p_external_id,p_created_by,p_created_at,p_created_by,p_created_at) RETURNING "id"
+        ), save_user_permission AS (
+            INSERT INTO document_user_permission (user_id, document_id)
+            SELECT p_created_by, (SELECT id FROM save_document LIMIT 1)
+        ) SELECT COALESCE(
+            (SELECT id FROM save_document LIMIT 1),
+            -1
+        ) INTO p_id;
     END
     $BODY$
     LANGUAGE plpgsql;
@@ -489,7 +492,7 @@ begin
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_assig_user_document_permission(
-    p_userid integer = NULL, p_documentid integer = NULL
+    p_user_id integer = NULL, p_document_id integer = NULL
     )
     RETURNS TABLE (user_id integer, document_id integer, user_name character varying, document_name character varying) 
     AS
@@ -498,7 +501,7 @@ begin
 
         INSERT INTO document_user_permission (user_id, document_id)
         SELECT val.user_id, val.document_id
-        FROM (VALUES (p_userid, p_documentid)) val (user_id, document_id)
+        FROM (VALUES (p_user_id, p_document_id)) val (user_id, document_id)
         JOIN "user" u ON val.user_id = u.id
         JOIN "document" d ON val.document_id = d.id
         ON CONFLICT ON CONSTRAINT "pk_document_user" DO NOTHING;
@@ -508,14 +511,14 @@ begin
         FROM "user" u
         INNER JOIN document_user_permission du ON u.id = du.user_id
         INNER JOIN "document" d ON du.document_id = d.id
-        WHERE u.id = p_userid AND d.id = p_documentid;
+        WHERE u.id = p_user_id AND d.id = p_document_id;
 
     END
     $BODY$
     LANGUAGE plpgsql;
 
     CREATE OR REPLACE FUNCTION udf_assig_group_document_permission(
-    p_groupid integer = NULL, p_documentid integer = NULL
+    p_group_id integer = NULL, p_document_id integer = NULL
     )
     RETURNS TABLE (group_id integer, document_id integer, group_name character varying, document_name character varying) 
     AS
@@ -523,7 +526,7 @@ begin
     BEGIN
         INSERT INTO document_group_permission (document_id, group_id) 
         SELECT val.document_id, val.group_id
-		FROM (VALUES (p_documentid, p_groupid)) val (document_id, group_id)
+		FROM (VALUES (p_document_id, p_group_id)) val (document_id, group_id)
 		JOIN "document" d ON val.document_id = d.id
 		JOIN "group" gr ON val.group_id = gr.id
         ON CONFLICT ON CONSTRAINT "pk_document_group" DO NOTHING;
@@ -533,7 +536,7 @@ begin
         FROM "group" g
 		INNER JOIN document_group_permission dg ON g.id = dg.group_id
 		INNER JOIN "document" d ON dg.document_id = d.id
-        WHERE g.id = p_groupid AND d.id = p_documentid;
+        WHERE g.id = p_group_id AND d.id = p_document_id;
     END
     $BODY$
     LANGUAGE plpgsql;

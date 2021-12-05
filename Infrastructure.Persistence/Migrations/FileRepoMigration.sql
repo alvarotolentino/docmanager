@@ -12,7 +12,7 @@ begin
     raise info 'Starting creating functions and procedures';
 
     CREATE OR REPLACE FUNCTION udf_get_document_data_by_id(
-        p_documentid integer = NULL
+        p_document_id integer = NULL
     )
     RETURNS TABLE (id integer, data bytea) 
     AS
@@ -21,7 +21,7 @@ begin
         RETURN QUERY
         SELECT doc.id, doc.data
         FROM "document" doc
-        WHERE doc.id = p_documentid;
+        WHERE doc.id = p_document_id;
     END
     $BODY$
     LANGUAGE plpgsql;

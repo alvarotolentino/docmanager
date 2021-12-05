@@ -33,6 +33,7 @@ namespace Application.Features.Groups.Commands.RegisterGroup
             group.CreatedBy = this.authenticatedUserService.UserId.Value;
             group.CreatedAt = this.dateTimeService.UtcDateTime;
             var id = await this.groupRepositoryAsync.CreateGroup(group, cancellationToken);
+            if (id == 0) return new Response<RegisterGroupViewModel>(null, "Group could not be registered", succeeded: false);
             return new Response<RegisterGroupViewModel>(new RegisterGroupViewModel { Id = id, Name = group.Name });
         }
     }

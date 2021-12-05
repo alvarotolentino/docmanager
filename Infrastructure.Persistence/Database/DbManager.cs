@@ -25,24 +25,17 @@ namespace Infrastructure.Persistence.Database
         dynamic inputParam = null,
         dynamic outpuParam = null,
         ParameterDirection outputDirection = ParameterDirection.InputOutput,
+        CommandType? commandType = null,
         string paramPrefix = "@p_") where T : class, new()
         {
             using (var cmd = new NpgsqlCommand(command, this.connection))
             {
+                if (commandType.HasValue) cmd.CommandType = commandType.Value;
+
                 AddInputParameters(inputParam, paramPrefix, cmd);
 
-                if (outpuParam != null)
-                {
-                    var o = (object)outpuParam;
-                    var properties = o.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-                    foreach (var property in properties)
-                    {
-                        var value = property.GetValue(o);
-                        var param = new NpgsqlParameter(ToSnakeCase(property.Name, paramPrefix), value);
-                        param.Direction = outputDirection;
-                        cmd.Parameters.Add(param);
-                    }
-                }
+                AddOutputParameters(outpuParam, outputDirection, paramPrefix, cmd);
+
                 if (connection?.State != ConnectionState.Open) await connection.OpenAsync();
                 await cmd.PrepareAsync();
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
@@ -65,6 +58,7 @@ namespace Infrastructure.Persistence.Database
                 return await Task.FromResult(dyn);
             }
         }
+
         public async Task<IEnumerable<T>> ExecuteReaderAsListAsync<T>(string command,
         CancellationToken cancellationToken,
         dynamic inputParam = null,
@@ -161,13 +155,38 @@ namespace Infrastructure.Persistence.Database
                 foreach (var property in properties)
                 {
                     var value = property.GetValue(o);
-                    if (value != null || (property.PropertyType == typeof(int) && ((int)value < 0 || (int)value > 0)))
+                    if (value != null)
                     {
-                        cmd.Parameters.AddWithValue(ToSnakeCase(property.Name, paramPrefix), value);
+                        if (property.PropertyType == typeof(int))
+                        {
+                            if ((int)value < 0 || (int)value > 0)
+                                cmd.Parameters.AddWithValue(ToSnakeCase(property.Name, paramPrefix), value);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue(ToSnakeCase(property.Name, paramPrefix), value);
+                        }
                     }
                 }
             }
         }
+
+        private void AddOutputParameters(dynamic outpuParam, ParameterDirection outputDirection, string paramPrefix, NpgsqlCommand cmd)
+        {
+            if (outpuParam != null)
+            {
+                var o = (object)outpuParam;
+                var properties = o.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                foreach (var property in properties)
+                {
+                    var value = property.GetValue(o);
+                    var param = new NpgsqlParameter(ToSnakeCase(property.Name, paramPrefix), value);
+                    param.Direction = outputDirection;
+                    cmd.Parameters.Add(param);
+                }
+            }
+        }
+
 
         public void Dispose()
         {

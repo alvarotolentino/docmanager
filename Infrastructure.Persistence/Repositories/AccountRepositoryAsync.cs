@@ -62,28 +62,31 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<IdentityResult> CreateAsync(User user, CancellationToken cancellationToken)
         {
-            using (var cmd = new NpgsqlCommand("udf_create_account_default_role", connection))
+            using var dbManager = new DbManager(connection);
+            var dyn = await dbManager.ExecuteNonQueryAsync<dynamic>("udf_create_account_default_role",
+            cancellationToken,
+            inputParam: new
             {
-                connection.Open();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.Add(new NpgsqlParameter("p_id", DbType.Int32) { Value = -1, Direction = ParameterDirection.Output });
-                cmd.Parameters.AddWithValue("p_first_name", user.FirstName);
-                cmd.Parameters.AddWithValue("p_last_name", user.LastName);
-                cmd.Parameters.AddWithValue("p_user_name", user.UserName);
-                cmd.Parameters.AddWithValue("p_normalized_user_name", user.NormalizedUserName);
-                cmd.Parameters.AddWithValue("p_email", user.Email);
-                cmd.Parameters.AddWithValue("p_normalized_email", user.NormalizedEmail);
-                cmd.Parameters.AddWithValue("p_password_hash", user.PasswordHash);
-                cmd.Parameters.AddWithValue("p_created_at", user.CreatedAt);
-                cmd.Parameters.AddWithValue("p_created_by", user.CreatedBy);
-                cmd.Prepare();
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                UserName = user.UserName,
+                NormalizedUserName = user.NormalizedEmail,
+                Email = user.Email,
+                NormalizedEmail = user.NormalizedEmail,
+                PasswordHash = user.PasswordHash,
+                CreatedBy = user.CreatedBy,
+                CreatedAt = user.CreatedAt,
+            },
+            outpuParam: new { Id = -1 },
+            outputDirection: ParameterDirection.Output,
+            commandType: CommandType.StoredProcedure,
+            paramPrefix: "p_");
 
-                await cmd.ExecuteNonQueryAsync(cancellationToken);
-                connection.Close();
-                user.Id = (int)cmd.Parameters["p_id"].Value;
+            if (dyn == null) return IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Error creating account." } });
+            var keyValue = dyn as IDictionary<string, object>;
+            var id = (int)keyValue["Id"];
+            return user.Id > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Email '{user.Email}' already exists." } });
 
-                return user.Id > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Email '{user.Email}' already exists." } });
-            }
         }
 
         public async Task<User> FindByEmailAsync(User user, CancellationToken cancellationToken)
@@ -140,68 +143,38 @@ namespace Infrastructure.Persistence.Repositories
             }
         }
 
-        public void Dispose()
-        {
-            if (this.connection != null && this.connection.State == ConnectionState.Open)
-            {
-                this.connection.Close();
-            }
-        }
 
         public async Task<IdentityResult> DeleteAsync(User user, CancellationToken cancellationToken)
         {
-            using (var cmd = new NpgsqlCommand("CALL \"usp_delete_account\" (@p_id)", connection))
-            {
-                connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = user.Id, Direction = ParameterDirection.InputOutput });
-                cmd.Prepare();
-                await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var result = (int)cmd.Parameters["@p_id"].Value;
-                connection.Close();
-                return result > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"User not found." } });
-            }
+            using var dbManager = new DbManager(connection);
+            var sp = "CALL \"usp_delete_account\" (@p_id)";
+            var dyn = await dbManager.ExecuteNonQueryAsync<dynamic>(sp, cancellationToken, outpuParam: new { Id = user.Id });
+            if (dyn == null) return IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Error deleting account." } });
+
+            var keyValue = dyn as IDictionary<string, object>;
+            var id = (int)keyValue[nameof(user.Id)];
+            return id > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"User not found." } });
         }
 
         public async Task<IReadOnlyList<User>> GetAccounts(GetAllAccountsParameter filter, CancellationToken cancellationToken)
         {
-            List<User> users = null;
-            using (var cmd = new NpgsqlCommand("udf_get_accounts_by_page_number_size", connection))
-            {
-                connection.Open();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("p_number", filter.PageNumber);
-                cmd.Parameters.AddWithValue("p_size", filter.PageSize);
-                cmd.Prepare();
-
-                using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
-                {
-                    users = new List<User>();
-                    if (reader.HasRows)
-                    {
-                        while (reader.Read())
-                        {
-                            var user = new User
-                            {
-                                Id = (int)reader["id"],
-                                Email = reader["email"].ToString()
-                            };
-                            users.Add(user);
-                        }
-                    }
-                }
-
-                connection.Close();
-            }
-            return users;
+            using var dbManager = new DbManager(connection);
+            var result = await dbManager.ExecuteReaderAsListAsync<User>("udf_get_accounts_by_page_number_size",
+            cancellationToken,
+            inputParam: new { Number = filter.PageNumber, Size = filter.PageSize },
+            commandType: CommandType.StoredProcedure
+            );
+            return result != null ? result.ToList() : null;
         }
         public Task<User> FindByIdAsync(string userId, CancellationToken cancellationToken)
         {
-            return null;
+            return Task.FromResult<User>(null);
         }
 
         public Task<User> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
         {
-            return null;
+            return Task.FromResult<User>(null);
+
         }
 
         public Task<string> GetNormalizedUserNameAsync(User user, CancellationToken cancellationToken)
@@ -230,11 +203,14 @@ namespace Infrastructure.Persistence.Repositories
             user.UserName = user.NormalizedUserName.ToLower();
             return Task.FromResult(0);
         }
-
         public Task<IdentityResult> UpdateAsync(User user, CancellationToken cancellationToken)
         {
-            return null;
+            return Task.FromResult<IdentityResult>(null);
+
         }
 
+        public void Dispose()
+        {
+        }
     }
 }

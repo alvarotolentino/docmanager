@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Threading;
@@ -21,34 +22,29 @@ namespace Infrastructure.Persistence.Repositories
         }
         public async Task<IdentityResult> CreateAsync(Role role, CancellationToken cancellationToken)
         {
-            using (var cmd = new NpgsqlCommand("udf_create_role", connection))
-            {
-                connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("p_id", DbType.Int32) { Direction = ParameterDirection.Output });
-                cmd.Parameters.AddWithValue("p_name", role.Name);
-                cmd.Parameters.AddWithValue("p_created_at", role.CreatedAt);
-                cmd.Parameters.AddWithValue("p_created_by", role.CreatedBy);
-                cmd.Prepare();
-                await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var id = (int)cmd.Parameters["p_id"].Value;
-                connection.Close();
-                return id > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Role '{role.Name}' already exists." } });
+            using var dbManager = new DbManager(connection);
+            var dyn = await dbManager.ExecuteNonQueryAsync<dynamic>("udf_create_role", cancellationToken,
+            inputParam: role,
+            outpuParam: new { Id = -1 },
+            commandType: CommandType.StoredProcedure);
+            if (dyn == null) return IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Role cannot be created." } });
 
-            }
+            var keyValue = dyn as IDictionary<string, object>;
+            var id = (int)keyValue["Id"];
+            return id > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Role '{role.Name}' already exists." } });
+
         }
 
         public async Task<IdentityResult> DeleteAsync(Role role, CancellationToken cancellationToken)
         {
-            using (var cmd = new NpgsqlCommand("CALL \"usp_delete_role\" (@p_id)", connection))
-            {
-                connection.Open();
-                cmd.Parameters.Add(new NpgsqlParameter("@p_id", DbType.Int32) { Value = role.Id, Direction = ParameterDirection.InputOutput });
-                cmd.Prepare();
-                await cmd.ExecuteNonQueryAsync(cancellationToken);
-                var result = (int)cmd.Parameters["@p_id"].Value;
-                connection.Close();
-                return result > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"User not found." } });
-            }
+            using var dbManager = new DbManager(connection);
+            var dyn = await dbManager.ExecuteNonQueryAsync<dynamic>("CALL \"usp_delete_role\" (@p_id)", cancellationToken,
+            outpuParam: new { Id = role.Id });
+            if (dyn == null) return IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Role cannot be deleted." } });
+
+            var keyValue = dyn as IDictionary<string, object>;
+            var id = (int)keyValue["Id"];
+            return id > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Role not found." } });
         }
 
         public void Dispose()
@@ -61,12 +57,13 @@ namespace Infrastructure.Persistence.Repositories
 
         public Task<Role> FindByIdAsync(string roleId, CancellationToken cancellationToken)
         {
-            return null;
+            return Task.FromResult<Role>(null);
         }
 
         public Task<Role> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
         {
-            return null;
+            return Task.FromResult<Role>(null);
+
         }
 
         public Task<string> GetNormalizedRoleNameAsync(Role role, CancellationToken cancellationToken)
@@ -98,7 +95,8 @@ namespace Infrastructure.Persistence.Repositories
 
         public Task<IdentityResult> UpdateAsync(Role role, CancellationToken cancellationToken)
         {
-            return null;
+            return Task.FromResult<IdentityResult>(null);
+
         }
     }
 }
