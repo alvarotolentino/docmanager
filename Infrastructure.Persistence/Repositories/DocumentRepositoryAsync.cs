@@ -113,14 +113,14 @@ namespace Infrastructure.Persistence.Repositories
         public async Task<UserDocument> AssingUserPermissionAsync(UserDocument userDocument, CancellationToken cancellationToken)
         {
             using var dbManager = new DbManager(this.metadataConnection);
-            var result = await dbManager.ExecuteReaderAsync<UserDocument>("udf_assig_user_document_permission", cancellationToken, inputParam: userDocument);
+            var result = await dbManager.ExecuteReaderAsync<UserDocument>("udf_assig_user_document_permission", cancellationToken, inputParam: userDocument, commandType: CommandType.StoredProcedure);
             return result;
         }
 
         public async Task<GroupDocument> AssingGroupPermissionAsync(GroupDocument groupDocument, CancellationToken cancellationToken)
         {
             using var dbManager = new DbManager(this.metadataConnection);
-            var result = await dbManager.ExecuteReaderAsync<GroupDocument>("udf_assig_group_document_permission", cancellationToken, inputParam: groupDocument);
+            var result = await dbManager.ExecuteReaderAsync<GroupDocument>("udf_assig_group_document_permission", cancellationToken, inputParam: groupDocument, commandType: CommandType.StoredProcedure);
             return result;
         }
 

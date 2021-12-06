@@ -84,7 +84,7 @@ namespace Infrastructure.Persistence.Repositories
 
             if (dyn == null) return IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Error creating account." } });
             var keyValue = dyn as IDictionary<string, object>;
-            var id = (int)keyValue["Id"];
+            user.Id = (int)keyValue["Id"];
             return user.Id > -1 ? IdentityResult.Success : IdentityResult.Failed(new IdentityError[] { new IdentityError { Description = $"Email '{user.Email}' already exists." } });
 
         }
