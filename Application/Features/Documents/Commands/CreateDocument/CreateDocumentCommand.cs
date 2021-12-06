@@ -11,9 +11,9 @@ namespace Application.Features.Documents.Commands.CreateDocument
 {
     public class CreateDocument : IRequest<Response<CreateDocumentViewModel>>
     {
-        public string description { get; set; }
-        public string category { get; set; }
-        public IFormFile file { get; set; }
+        public string Description { get; set; }
+        public string Category { get; set; }
+        public IFormFile File { get; set; }
 
     }
 

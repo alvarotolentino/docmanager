@@ -15,8 +15,8 @@ namespace Application.Behaviours
         private readonly ILogger<RequestValidationBehavior<TRequest, TResponse>> logger;
         public RequestValidationBehavior(IEnumerable<IValidator<TRequest>> validators, ILogger<RequestValidationBehavior<TRequest, TResponse>> logger)
         {
-           this.logger = logger;
-           this.validators = validators;
+            this.logger = logger;
+            this.validators = validators;
         }
         public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
         {
@@ -36,7 +36,10 @@ namespace Application.Behaviours
 
             if (failures.Any())
             {
-               this.logger.LogInformation(failures.ToString());
+                foreach (var failure in failures)
+                {
+                    this.logger.LogInformation(string.Join(", ", failure.Value));
+                }
                 throw new Application.Exceptions.ValidationException((string)Resources.Reader.GetMessages()["ExceptionMessage"]["Validation"], failures);
             }
 

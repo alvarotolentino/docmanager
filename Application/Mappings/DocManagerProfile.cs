@@ -86,15 +86,15 @@ namespace Application.Mappings
         private void MappingDocumentDomain()
         {
             CreateMap<CreateDocument, Document>()
-                        .ForMember(dto => dto.ContentType, opts => opts.MapFrom(s => s.file.ContentType))
-                        .ForMember(dto => dto.Length, opts => opts.MapFrom(s => s.file.Length))
-                        .ForMember(dto => dto.Name, opts => opts.MapFrom(s => s.file.FileName))
+                        .ForMember(dto => dto.ContentType, opts => opts.MapFrom(s => s.File.ContentType))
+                        .ForMember(dto => dto.Length, opts => opts.MapFrom(s => s.File.Length))
+                        .ForMember(dto => dto.Name, opts => opts.MapFrom(s => s.File.FileName))
                         .ForMember(dto => dto.Data, opts => opts.Ignore())
                         .AfterMap((source, destination) =>
                         {
                             using (var ms = new MemoryStream())
                             {
-                                source.file.OpenReadStream().CopyTo(ms);
+                                source.File.OpenReadStream().CopyTo(ms);
                                 destination.Data = ms.ToArray();
                             }
                         });

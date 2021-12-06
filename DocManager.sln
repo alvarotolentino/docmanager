@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Shared", "In
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Identity", "Infrastructure.Identity\Infrastructure.Identity.csproj", "{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocManagerTest", "DocManagerTest\DocManagerTest.csproj", "{71F594B4-5A53-4276-9219-45C69F460AC7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -124,5 +126,17 @@ Global
 		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Release|x64.Build.0 = Release|Any CPU
 		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Release|x86.ActiveCfg = Release|Any CPU
 		{61D72153-E77F-4EE4-8A2E-9FCEEA04C0EA}.Release|x86.Build.0 = Release|Any CPU
+		{71F594B4-5A53-4276-9219-45C69F460AC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71F594B4-5A53-4276-9219-45C69F460AC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71F594B4-5A53-4276-9219-45C69F460AC7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{71F594B4-5A53-4276-9219-45C69F460AC7}.Debug|x64.Build.0 = Debug|Any CPU
+		{71F594B4-5A53-4276-9219-45C69F460AC7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{71F594B4-5A53-4276-9219-45C69F460AC7}.Debug|x86.Build.0 = Debug|Any CPU
+		{71F594B4-5A53-4276-9219-45C69F460AC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71F594B4-5A53-4276-9219-45C69F460AC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71F594B4-5A53-4276-9219-45C69F460AC7}.Release|x64.ActiveCfg = Release|Any CPU
+		{71F594B4-5A53-4276-9219-45C69F460AC7}.Release|x64.Build.0 = Release|Any CPU
+		{71F594B4-5A53-4276-9219-45C69F460AC7}.Release|x86.ActiveCfg = Release|Any CPU
+		{71F594B4-5A53-4276-9219-45C69F460AC7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

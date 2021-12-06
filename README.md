@@ -37,6 +37,8 @@ Features:
 
 :white_check_mark: User - Role - Group Management (Register/Confirmation Email)
 
+:white_check_mark: Integration test
+
 Technologies used:
 
 * .Net Core 3.1
