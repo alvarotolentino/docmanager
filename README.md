@@ -37,6 +37,24 @@ Features:
 
 :white_check_mark: User - Role - Group Management (Register/Confirmation Email)
 
+Technologies used:
+
+* .Net Core 3.1
+* PostgreSQL
+
+Functionalities implemented:
+
+* Login.
+* Upload and download of files.
+* Create and list Users and Groups.
+* A user can belong to one or more groups.
+* Document access can be granted to groups or directly to users.
+* Default roles: Admin, Manager and Basic
+    * Basic can download documents.
+    * Regular can upload and download documents.
+    * Admin can crud Users, Groups, upload and dowload documents.
+* Store metadata and files in separate databases.
+
 
 This is the Swagger documentation:
 
@@ -69,9 +87,12 @@ There are the list of components:
 * Api: The presentation layer.
 
 ## How to run the app?
-* Ensure the connectionstring in the __appsettings.json__ file is correct.
-* Run the __InitialMigration.sql__ script which initialize the database objects (tables, index, procedures)
-
+* Ensure the connectionstrings in the __appsettings.json__ file is correct.
+    * __DocumentMetadataConnection__: Connection to the document metadata DB, includes User, Role, Group, etc tables.
+    * __DocumentDataConnection__:  Connection to the blob store, contains a document table to store the file content.
+* Run the each script file in the correct DB:
+    * __MetadataRepoMigration.sql__ For the metadata DB, it script initialize the database objects (tables, index, procedures)
+    * __FileRepoMigration.sql__ For the DB which contains the file content.
 
 Finally, from the root folder execute the following command:
 
