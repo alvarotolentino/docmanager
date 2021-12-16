@@ -101,7 +101,6 @@ namespace Infrastructure.Persistence.Repositories
                 var userFound = new User() { Roles = new List<Role>(), Groups = new List<Group>() };
                 connection.Open();
                 cmd.Parameters.AddWithValue("p_email", user.Email);
-                cmd.Prepare();
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
 

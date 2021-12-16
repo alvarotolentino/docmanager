@@ -31,12 +31,22 @@ namespace Infrastructure.Persistence
 
         public static void AddPersistenceInfrastructureLayer(this IServiceCollection services, IConfiguration configuration)
         {
+            var csbMetadata = new NpgsqlConnectionStringBuilder(configuration.GetConnectionString("DocumentMetadataConnection"))
+            {
+                Pooling = true,
+                Multiplexing = true,
+            };
+            var csbData = new NpgsqlConnectionStringBuilder(configuration.GetConnectionString("DocumentDataConnection"))
+            {
+                Pooling = true,
+                Multiplexing = true,
+            };
 
-            services.AddSingleton<DatabaseConnections>(provider =>
+            services.AddTransient<DatabaseConnections>(provider =>
             {
                 return new DatabaseConnections(
-                metadataConnection: new NpgsqlConnection(configuration.GetConnectionString("DocumentMetadataConnection")),
-                dataConnection: new NpgsqlConnection(configuration.GetConnectionString("DocumentDataConnection")));
+                metadataConnection: new NpgsqlConnection(csbMetadata.ToString()),
+                dataConnection: new NpgsqlConnection(csbData.ToString()));
             });
 
             services.AddTransient<IDocumentRepositoryAsync, DocumentRepositoryAsync>();

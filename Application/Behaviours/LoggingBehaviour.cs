@@ -14,23 +14,32 @@ namespace Application.Behaviours
 
         public LoggingBehaviour(ILogger<LoggingBehaviour<TRequest, TResponse>> logger)
         {
-           this.logger = logger;
+            this.logger = logger;
         }
 
         public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
         {
-           this.logger.LogInformation($"Handling {typeof(TRequest).Name}");
-            Type myType = request.GetType();
-            IList<PropertyInfo> props = new List<PropertyInfo>(myType.GetProperties());
-            foreach (PropertyInfo prop in props)
+            try
             {
-                object propValue = prop.GetValue(request, null);
-               this.logger.LogInformation("{Property} : {@Value}", prop.Name, propValue);
-            }
-            var response = await next();
+                this.logger.LogInformation($"Handling {typeof(TRequest).Name}");
+                Type myType = request.GetType();
+                IList<PropertyInfo> props = new List<PropertyInfo>(myType.GetProperties());
+                foreach (PropertyInfo prop in props)
+                {
+                    object propValue = prop.GetValue(request, null);
+                    this.logger.LogInformation("{Property} : {@Value}", prop.Name, propValue);
+                }
+                var response = await next();
 
-           this.logger.LogInformation($"Handled {typeof(TResponse).Name}");
-            return response;
+                this.logger.LogInformation($"Handled {typeof(TResponse).Name}");
+                return response;
+
+            }
+            catch (System.Exception exception)
+            {
+                this.logger.LogError($"{Utf8Json.JsonSerializer.ToJsonString(exception)}");
+                throw;
+            }
         }
     }
 }

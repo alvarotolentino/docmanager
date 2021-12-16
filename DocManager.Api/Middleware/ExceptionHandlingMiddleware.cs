@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Application.Exceptions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Utf8Json;
 
 namespace DocManager.Api.Middleware
@@ -10,6 +11,12 @@ namespace DocManager.Api.Middleware
     public class ExceptionHandlingMiddleware : IMiddleware
     {
         private const string SERVERERROR = "Server Error";
+        private readonly ILogger<ExceptionHandlingMiddleware> logger;
+
+        public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger)
+        {
+            this.logger = logger;
+        }
         public async Task InvokeAsync(HttpContext context, RequestDelegate next)
         {
             try
@@ -18,6 +25,7 @@ namespace DocManager.Api.Middleware
             }
             catch (Exception exception)
             {
+                this.logger.LogError(exception, SERVERERROR);
                 await HandleException(context, exception);
             }
         }

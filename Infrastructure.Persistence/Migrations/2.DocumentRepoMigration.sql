@@ -3,7 +3,7 @@ begin
 
     raise info 'Starting creating tables';
 
-    create table if not exists "document" (
+    create table if not exists "document_data" (
         id integer not null generated always as identity primary key,
         data bytea not null
     );
@@ -20,7 +20,7 @@ begin
     BEGIN
         RETURN QUERY
         SELECT doc.id, doc.data
-        FROM "document" doc
+        FROM "document_data" doc
         WHERE doc.id = p_document_id;
     END
     $BODY$
@@ -30,7 +30,7 @@ begin
     AS $BODY$
     BEGIN
         WITH document_inserted AS (
-            INSERT INTO "document" (data)
+            INSERT INTO "document_data" (data)
             VALUES (p_data) 
             RETURNING "id"
         ) SELECT COALESCE(
@@ -45,7 +45,7 @@ begin
     AS $BODY$
     BEGIN
         WITH delete_document AS (
-            DELETE FROM "document" doc 
+            DELETE FROM "document_data" doc 
             WHERE doc.id = p_id
             RETURNING doc.id
         ) SELECT COALESCE(

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Dynamic;
@@ -12,12 +13,17 @@ using Npgsql;
 
 namespace Infrastructure.Persistence.Database
 {
+    static class SnakeMapping
+    {
+        public static ConcurrentDictionary<string, string> Mapping { get; set; }
+    }
     public class DbManager : IDisposable
     {
         private NpgsqlConnection connection;
         public DbManager(NpgsqlConnection connection)
         {
             this.connection = connection;
+            SnakeMapping.Mapping = new ConcurrentDictionary<string, string>();
         }
 
         public async Task<T> ExecuteNonQueryAsync<T>(string command,
@@ -36,9 +42,9 @@ namespace Infrastructure.Persistence.Database
 
                 AddOutputParameters(outpuParam, outputDirection, paramPrefix, cmd);
 
-                if (connection?.State != ConnectionState.Open) await connection.OpenAsync();
-                await cmd.PrepareAsync();
+                if (connection?.State == ConnectionState.Closed) await connection.OpenAsync();
                 await cmd.ExecuteNonQueryAsync(cancellationToken);
+                await connection.CloseAsync();
 
                 dynamic dyn = null;
                 if (outpuParam != null)
@@ -46,15 +52,15 @@ namespace Infrastructure.Persistence.Database
                     dyn = new ExpandoObject();
                     var o = (object)outpuParam;
                     var properties = o.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                    var expandoDict = dyn as IDictionary<string, object>;
+
                     foreach (var property in properties)
                     {
-                        string sType = property.PropertyType.FullName;
                         var paramValue = cmd.Parameters[ToSnakeCase(property.Name, paramPrefix)].Value;
-                        var value = Convert.ChangeType(paramValue, Type.GetType(sType));
-                        AddProperty(dyn, property.Name, value);
+                        var castedValue = Convert.ChangeType(paramValue, Type.GetType(property.PropertyType.FullName));
+                        AddProperty(expandoDict, property.Name, castedValue);
                     }
                 }
-                await connection.CloseAsync();
                 return await Task.FromResult(dyn);
             }
         }
@@ -72,8 +78,7 @@ namespace Infrastructure.Persistence.Database
                 if (commandType.HasValue) cmd.CommandType = commandType.Value;
                 AddInputParameters(inputParam, paramPrefix, cmd);
 
-                if (connection?.State != ConnectionState.Open) await connection.OpenAsync();
-                await cmd.PrepareAsync();
+                if (connection?.State == ConnectionState.Closed) await connection.OpenAsync();
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (!reader.HasRows) return await Task.FromResult<IEnumerable<T>>(Enumerable.Empty<T>());
@@ -85,10 +90,8 @@ namespace Infrastructure.Persistence.Database
                         for (int i = 0; i < length; i++)
                         {
                             var propertyName = FromSnakeCase(reader.GetName(i));
-                            var value = reader.GetValue(i);
                             var property = obj.GetType().GetProperty(propertyName);
-                            string sType = property.PropertyType.FullName;
-                            var castedValue = Convert.ChangeType(value, Type.GetType(sType));
+                            var castedValue = Convert.ChangeType(reader.GetValue(i), Type.GetType(property.PropertyType.FullName));
                             property.SetValue(obj, castedValue);
                         }
                         list.Add(obj);
@@ -113,17 +116,17 @@ namespace Infrastructure.Persistence.Database
                 if (commandType.HasValue) cmd.CommandType = commandType.Value;
                 AddInputParameters(inputParam, paramPrefix, cmd);
 
-                if (connection?.State != ConnectionState.Open) await connection.OpenAsync();
-                await cmd.PrepareAsync();
+                if (connection?.State == ConnectionState.Closed) await connection.OpenAsync();
                 using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                 {
                     if (!reader.HasRows || !await reader.ReadAsync()) return await Task.FromResult<T>(null);
                     var length = reader.FieldCount;
+
+                    var expandoDict = dyn as IDictionary<string, object>;
                     for (int i = 0; i < length; i++)
                     {
                         var propertyName = FromSnakeCase(reader.GetName(i));
-                        var value = reader.GetValue(i);
-                        AddProperty(dyn, propertyName, value);
+                        AddProperty(expandoDict, propertyName, reader.GetValue(i));
                     }
                 }
                 await connection.CloseAsync();
@@ -139,8 +142,7 @@ namespace Infrastructure.Persistence.Database
             foreach (var key in keyValue.Keys)
             {
                 var property = obj.GetType().GetProperty(key);
-                string sType = property.PropertyType.FullName;
-                var castedValue = Convert.ChangeType(keyValue[key], Type.GetType(sType));
+                var castedValue = Convert.ChangeType(keyValue[key], Type.GetType(property.PropertyType.FullName));
                 property.SetValue(obj, castedValue);
             }
             return await Task.FromResult(obj);
@@ -198,6 +200,9 @@ namespace Infrastructure.Persistence.Database
 
         private string FromSnakeCase(string value, string prefix = null)
         {
+            var name = SnakeMapping.Mapping.Values.FirstOrDefault(v => v == value);
+            if (!string.IsNullOrWhiteSpace(name)) return name;
+
             if (prefix != null)
                 value = value.Remove(prefix.Length);
 
@@ -223,6 +228,9 @@ namespace Infrastructure.Persistence.Database
         }
         private string ToSnakeCase(string value, string prefix)
         {
+            SnakeMapping.Mapping.TryGetValue(value, out var snakeCaseValue);
+            if (!string.IsNullOrWhiteSpace(snakeCaseValue)) return snakeCaseValue;
+
             var sb = new StringBuilder();
             if (!string.IsNullOrEmpty(prefix)) sb.Append(prefix);
             for (var i = 0; i < value.Length; i++)
@@ -237,12 +245,14 @@ namespace Infrastructure.Persistence.Database
                     sb.Append(value[i]);
                 }
             }
-            return sb.ToString().ToLower();
+
+            var snakeValue = sb.ToString().ToLower();
+            SnakeMapping.Mapping.TryAdd(value, snakeValue);
+            return snakeValue;
         }
 
-        private static void AddProperty(ExpandoObject expando, string propertyName, object propertyValue)
+        private static void AddProperty(IDictionary<string, object> expandoDict, string propertyName, object propertyValue)
         {
-            var expandoDict = expando as IDictionary<string, object>;
             if (expandoDict.ContainsKey(propertyName))
                 expandoDict[propertyName] = propertyValue;
             else

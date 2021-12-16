@@ -81,10 +81,6 @@ namespace Infrastructure.Persistence.Repositories
 
         public void Dispose()
         {
-            if (this.connection != null && this.connection.State == ConnectionState.Open)
-            {
-                this.connection.Close();
-            }
         }
     }
 }

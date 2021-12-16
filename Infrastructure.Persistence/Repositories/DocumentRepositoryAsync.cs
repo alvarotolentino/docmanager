@@ -12,7 +12,6 @@ using Application.Interfaces.Repositories;
 using System.Threading;
 using Application.Features.Documents.Queries.GetAllDocuments;
 using Infrastructure.Persistence.Database;
-using System.Transactions;
 using System.Linq;
 
 namespace Infrastructure.Persistence.Repositories
@@ -89,25 +88,29 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<int> SaveDocument(Document document, CancellationToken cancellationToken)
         {
-            using var dbManagerData = new DbManager(this.dataConnection);
-            var sp = "CALL \"usp_insert_document_data\" (@p_id, @p_data)";
-            var dynData = await dbManagerData.ExecuteNonQueryAsync<dynamic>(sp, cancellationToken,
-            inputParam: new { Data = document.Data },
-            outpuParam: new { Id = -1 });
-            if (dynData == null) return -1;
-            var kvData = dynData as IDictionary<string, object>;
-            document.ExternalId = (int)kvData["Id"];
+            var spInsertData = "CALL \"usp_insert_document_data\" (@p_id, @p_data)";
+            var spInsertMetadata = "CALL \"usp_insert_document_metadata\" (@p_id, @p_name, @p_description, @p_category, @p_content_type, @p_length, @p_external_id, @p_created_at, @p_created_by)";
 
-            var spInsertDoc = "CALL \"usp_insert_document_metadata\" (@p_id, @p_name, @p_description, @p_category, @p_content_type, @p_length, @p_external_id, @p_created_at, @p_created_by)";
-            using var dbManagerMetadata = new DbManager(this.metadataConnection);
-            var dynMetadata = await dbManagerMetadata.ExecuteNonQueryAsync<dynamic>(spInsertDoc, cancellationToken,
-            inputParam: document,
-            outpuParam: new { Id = -1 });
-            if (dynMetadata == null) return -1;
-            var kvMetadata = dynMetadata as IDictionary<string, object>;
-            var id = (int)kvMetadata["Id"];
-            return id;
+            using (var dbManagerData = new DbManager(this.dataConnection))
+            {
+                var dynData = await dbManagerData.ExecuteNonQueryAsync<dynamic>(spInsertData, cancellationToken,
+                inputParam: new { Data = document.Data },
+                outpuParam: new { Id = -1 });
+                if (dynData == null) return -1;
+                var kvData = dynData as IDictionary<string, object>;
+                document.ExternalId = (int)kvData["Id"];
+            }
 
+            using (var dbManagerMetadata = new DbManager(this.metadataConnection))
+            {
+                var dynMetadata = await dbManagerMetadata.ExecuteNonQueryAsync<dynamic>(spInsertMetadata, cancellationToken,
+                inputParam: document,
+                outpuParam: new { Id = -1 });
+                if (dynMetadata == null) return -1;
+                var kvMetadata = dynMetadata as IDictionary<string, object>;
+                var id = (int)kvMetadata["Id"];
+                return id;
+            }
         }
 
         public async Task<UserDocument> AssingUserPermissionAsync(UserDocument userDocument, CancellationToken cancellationToken)
@@ -126,15 +129,6 @@ namespace Infrastructure.Persistence.Repositories
 
         public void Dispose()
         {
-            if (this.dataConnection != null && this.dataConnection.State == ConnectionState.Open)
-            {
-                this.dataConnection.Close();
-            }
-
-            if (this.metadataConnection != null && this.metadataConnection.State == ConnectionState.Open)
-            {
-                this.metadataConnection.Close();
-            }
         }
     }
 }
