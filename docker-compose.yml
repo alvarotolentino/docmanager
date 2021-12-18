@@ -10,12 +10,31 @@ services:
       retries: 10
     restart: always
     environment:
-      - POSTGRES_USER=root
-      - POSTGRES_PASSWORD=password
-      - APP_DB_USER=dmuser
-      - APP_DB_PASS=dmpassword
-      - APP_DB_NAME=documentmanager_db
+      - POSTGRES_USER=$POSTGRES_USER
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+      - METADATA_DB=$METADATA_DB
+      - DATA_DB=$DATA_DB
+      - DOC_USER=$DOC_USER
+      - DOC_PWD=$DOC_PWD
+      - MAX_CONNECTIONS=$MAX_CONNECTIONS
     volumes:
       - ./db:/docker-entrypoint-initdb.d/
     ports:
-      - 5432:5432
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+  pgbouncer:
+    image: pgbouncer:1.16.1
+    environment:
+      DB_HOST: db
+      DB_USER: $POSTGRES_USER
+      DB_PASSWORD: $POSTGRES_PASSWORD
+      DB_port: ${POSTGRES_PORT}
+      SYSLOG: 0
+      LOG_CONNECTIONS: 0
+      LOG_DISCONNECTIONS: 0
+      STATS_PERIOD: 0
+      DEFAULT_POOL_SIZE: $MAX_CONNECTIONS
+      POOL_MODE: 'statement'
+    links:
+      - db:db
+    ports:
+      - ${PGBOUNCER_PORT}:${PGBOUNCER_PORT}

@@ -13,17 +13,12 @@ using Npgsql;
 
 namespace Infrastructure.Persistence.Database
 {
-    static class SnakeMapping
-    {
-        public static ConcurrentDictionary<string, string> Mapping { get; set; }
-    }
     public class DbManager : IDisposable
     {
         private NpgsqlConnection connection;
         public DbManager(NpgsqlConnection connection)
         {
             this.connection = connection;
-            SnakeMapping.Mapping = new ConcurrentDictionary<string, string>();
         }
 
         public async Task<T> ExecuteNonQueryAsync<T>(string command,
@@ -39,7 +34,6 @@ namespace Infrastructure.Persistence.Database
                 if (commandType.HasValue) cmd.CommandType = commandType.Value;
 
                 AddInputParameters(inputParam, paramPrefix, cmd);
-
                 AddOutputParameters(outpuParam, outputDirection, paramPrefix, cmd);
 
                 if (connection?.State == ConnectionState.Closed) await connection.OpenAsync();
@@ -148,15 +142,14 @@ namespace Infrastructure.Persistence.Database
             return await Task.FromResult(obj);
         }
 
-        private void AddInputParameters(dynamic inputParam, string paramPrefix, NpgsqlCommand cmd)
+        private void AddInputParameters(object inputParam, string paramPrefix, NpgsqlCommand cmd)
         {
             if (inputParam != null)
             {
-                var o = (object)inputParam;
-                var properties = o.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                var properties = inputParam.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
                 foreach (var property in properties)
                 {
-                    var value = property.GetValue(o);
+                    var value = property.GetValue(inputParam);
                     if (value != null)
                     {
                         if (property.PropertyType == typeof(int))
@@ -173,15 +166,14 @@ namespace Infrastructure.Persistence.Database
             }
         }
 
-        private void AddOutputParameters(dynamic outpuParam, ParameterDirection outputDirection, string paramPrefix, NpgsqlCommand cmd)
+        private void AddOutputParameters(object outpuParam, ParameterDirection outputDirection, string paramPrefix, NpgsqlCommand cmd)
         {
             if (outpuParam != null)
             {
-                var o = (object)outpuParam;
-                var properties = o.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                var properties = outpuParam.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
                 foreach (var property in properties)
                 {
-                    var value = property.GetValue(o);
+                    var value = property.GetValue(outpuParam);
                     var param = new NpgsqlParameter(ToSnakeCase(property.Name, paramPrefix), value);
                     param.Direction = outputDirection;
                     cmd.Parameters.Add(param);
@@ -200,9 +192,6 @@ namespace Infrastructure.Persistence.Database
 
         private string FromSnakeCase(string value, string prefix = null)
         {
-            var name = SnakeMapping.Mapping.Values.FirstOrDefault(v => v == value);
-            if (!string.IsNullOrWhiteSpace(name)) return name;
-
             if (prefix != null)
                 value = value.Remove(prefix.Length);
 
@@ -228,8 +217,6 @@ namespace Infrastructure.Persistence.Database
         }
         private string ToSnakeCase(string value, string prefix)
         {
-            SnakeMapping.Mapping.TryGetValue(value, out var snakeCaseValue);
-            if (!string.IsNullOrWhiteSpace(snakeCaseValue)) return snakeCaseValue;
 
             var sb = new StringBuilder();
             if (!string.IsNullOrEmpty(prefix)) sb.Append(prefix);
@@ -247,7 +234,6 @@ namespace Infrastructure.Persistence.Database
             }
 
             var snakeValue = sb.ToString().ToLower();
-            SnakeMapping.Mapping.TryAdd(value, snakeValue);
             return snakeValue;
         }
 

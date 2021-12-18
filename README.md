@@ -43,6 +43,8 @@ Technologies used:
 
 * .Net Core 3.1
 * PostgreSQL
+* PgBouncer
+* Docker
 
 Functionalities implemented:
 
@@ -89,17 +91,18 @@ There are the list of components:
 * Api: The presentation layer.
 
 ## How to run the app?
-* Ensure the connectionstrings in the __appsettings.json__ file is correct.
-    * __DocumentMetadataConnection__: Connection to the document metadata DB, includes User, Role, Group, etc tables.
-    * __DocumentDataConnection__:  Connection to the blob store, contains a document table to store the file content.
-* Run the each script file in the correct DB:
-    * __MetadataRepoMigration.sql__ For the metadata DB, it script initialize the database objects (tables, index, procedures)
-    * __FileRepoMigration.sql__ For the DB which contains the file content.
+You can execute the following command:
+```
+docker-compose up
+```
+Two containers will be created:
+* db: The database container which is initialized with the DML and DDL scripts through the shell script __01-init.sh__
+* pgbouncer: The connection pool manager for postgres.
 
 Finally, from the root folder execute the following command:
 
 ```
-dotnet "run" "--project" "c:\Source\repos\DocManager\DocManager.Api\DocManager.Api.csproj" 
+dotnet "run" "--project" "c:\Source\repos\DocManager\DocManager.Api\DocManager.Api.csproj"  -c Release
 ```
 
 To debug just press __F5__ keyboard.

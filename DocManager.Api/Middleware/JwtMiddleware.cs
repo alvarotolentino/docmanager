@@ -28,10 +28,12 @@ namespace DocManager.Api.Middleware
 
         public async Task Invoke(HttpContext context)
         {
-            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            if (string.IsNullOrWhiteSpace(context.Request.Headers["Authorization"]))
+                await this.next(context);
 
-            if (token != null)
-                attachUserToContext(context, token);
+            var bearerToken = context.Request.Headers["Authorization"][0]?.Split(" ");
+            if (bearerToken != null)
+                attachUserToContext(context, bearerToken[1]);
 
             await this.next(context);
         }

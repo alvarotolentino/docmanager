@@ -42,7 +42,7 @@ namespace Infrastructure.Persistence
                 Multiplexing = true,
             };
 
-            services.AddTransient<DatabaseConnections>(provider =>
+            services.AddScoped<DatabaseConnections>(provider =>
             {
                 return new DatabaseConnections(
                 metadataConnection: new NpgsqlConnection(csbMetadata.ToString()),

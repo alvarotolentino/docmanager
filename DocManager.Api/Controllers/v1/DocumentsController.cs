@@ -73,13 +73,16 @@ namespace DocManager.Api.Controllers.v1
         [HttpPost("upload")]
         public async Task<IActionResult> CreateDocument([FromForm] CreateDocument request)
         {
+            return await this.retryPolicy.ExecuteAsync(async () =>
+            {
+                var result = await Mediator.Send(request);
 
-            var result = await Mediator.Send(request);
+                if (result.Succeeded)
+                    return StatusCode(StatusCodes.Status201Created, result);
 
-            if (result.Succeeded)
-                return StatusCode(StatusCodes.Status201Created, result);
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            });
 
-            return StatusCode(StatusCodes.Status500InternalServerError);
         }
 
         /// <summary>
